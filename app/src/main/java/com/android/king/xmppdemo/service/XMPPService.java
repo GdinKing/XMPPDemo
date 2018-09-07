@@ -2,11 +2,12 @@ package com.android.king.xmppdemo.service;
 
 import android.app.Service;
 import android.content.Intent;
+import android.os.IBinder;
+
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.listener.IncomingMsgListener;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
-import android.os.IBinder;
 
 import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.ConnectionListener;
@@ -18,6 +19,7 @@ import org.jivesoftware.smack.chat2.Chat;
 import org.jivesoftware.smack.chat2.ChatManager;
 import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.StanzaFilter;
+import org.jivesoftware.smack.filter.StanzaTypeFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
@@ -122,11 +124,11 @@ public class XMPPService extends Service {
     }
 
     /**
-     * 好友状态监听
+     * 好友申请监听
      */
     public void addFriendListener() {
         //条件过滤
-        StanzaFilter filter = new AndFilter();
+        StanzaFilter filter = new AndFilter(new StanzaTypeFilter(Presence.class));
         StanzaListener listener = new StanzaListener() {
             @Override
             public void processStanza(Stanza stanza) {

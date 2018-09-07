@@ -2,8 +2,7 @@ package com.android.king.xmppdemo.ui;
 
 import android.king.xmppdemo.R;
 
-import com.android.king.xmppdemo.entity.User;
-import com.android.king.xmppdemo.listener.OnNetworkExecuteListener;
+import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
@@ -71,7 +70,7 @@ public class RegistActivity extends BaseActivity {
      */
     private void doRegist(final String account, final String password) {
         showLoading();
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteListener() {
+        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
             @Override
             public void onExecute() throws Exception {
                 XMPPHelper.getInstance().registe(account, password, null);

@@ -2,12 +2,6 @@ package com.android.king.xmppdemo.fragment;
 
 import android.annotation.SuppressLint;
 import android.king.xmppdemo.R;
-
-import com.android.king.xmppdemo.adapter.UserAdapter;
-import com.android.king.xmppdemo.entity.User;
-import com.android.king.xmppdemo.util.Logger;
-import com.android.king.xmppdemo.xmpp.XMPPHelper;
-
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
@@ -17,6 +11,11 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.android.king.xmppdemo.adapter.UserAdapter;
+import com.android.king.xmppdemo.entity.User;
+import com.android.king.xmppdemo.util.Logger;
+import com.android.king.xmppdemo.xmpp.XMPPHelper;
 
 import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.provider.ProviderManager;
@@ -67,7 +66,7 @@ public class AddFriendFragment extends BaseFragment implements AdapterView.OnIte
             @Override
             public void onClick(View v) {
                 String account = etAccount.getText().toString().trim();
-                addFriend(account, account);
+                addFriend(account);
 //                searchUser(account);
             }
         });
@@ -153,16 +152,16 @@ public class AddFriendFragment extends BaseFragment implements AdapterView.OnIte
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         if (dataList != null) {
             User user = dataList.get(position);
-            addFriend(user.getAccount(), user.getName());
+            addFriend(user.getAccount());
         }
     }
 
-    private void addFriend(final String account, final String name) {
+    private void addFriend(final String account) {
         new Thread() {
             @Override
             public void run() {
                 try {
-                    boolean flag = XMPPHelper.getInstance().addFriend(account, name, "");
+                    boolean flag = XMPPHelper.getInstance().applyFriend(account);
                     mHandler.obtainMessage(101, flag).sendToTarget();
                 } catch (Exception e) {
                     mHandler.sendEmptyMessage(404);

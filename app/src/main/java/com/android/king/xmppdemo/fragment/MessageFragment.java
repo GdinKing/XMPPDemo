@@ -4,18 +4,18 @@ import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import com.android.king.xmppdemo.adapter.ChatAdapter;
-import com.android.king.xmppdemo.entity.ChatBean;
+import android.king.xmppdemo.R;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-
-import android.king.xmppdemo.R;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import com.android.king.xmppdemo.adapter.ChatAdapter;
+import com.android.king.xmppdemo.entity.ChatBean;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,10 +26,10 @@ import me.yokeyword.fragmentation.SupportFragment;
 /**
  *
  */
-public class ChatFragment extends SupportFragment {
+public class MessageFragment extends SupportFragment {
 
-    public static ChatFragment newInstance() {
-        ChatFragment fragment = new ChatFragment();
+    public static MessageFragment newInstance() {
+        MessageFragment fragment = new MessageFragment();
         return fragment;
     }
 
@@ -41,7 +41,7 @@ public class ChatFragment extends SupportFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.fragment_chat, container, false);
+        View v = inflater.inflate(R.layout.fragment_message, container, false);
 
         lvChat = v.findViewById(R.id.lv_chat);
         tvEmpty = v.findViewById(R.id.tv_empty);

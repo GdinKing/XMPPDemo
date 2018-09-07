@@ -14,11 +14,13 @@ import java.io.Serializable;
 public class User implements Serializable {
 
     private String name;
+    private String note;
     private String nickName;
     private Bitmap avatar;
     private String account;
     private String group;
     private String email;
+    private int sex;
 
     public String getName() {
         return name;
@@ -66,5 +68,21 @@ public class User implements Serializable {
 
     public void setNickName(String nickName) {
         this.nickName = nickName;
+    }
+
+    public int getSex() {
+        return sex;
+    }
+
+    public void setSex(int sex) {
+        this.sex = sex;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
     }
 }

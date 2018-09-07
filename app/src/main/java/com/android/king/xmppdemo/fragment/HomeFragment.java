@@ -1,5 +1,9 @@
 package com.android.king.xmppdemo.fragment;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.drawable.ColorDrawable;
 import android.king.xmppdemo.R;
 import android.os.Bundle;
@@ -11,6 +15,14 @@ import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.android.king.xmppdemo.config.AppConstants;
+import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
+import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.util.CommonUtil;
+import com.android.king.xmppdemo.view.TipDialog;
+import com.android.king.xmppdemo.xmpp.XMPPHelper;
 
 import me.yokeyword.fragmentation.SupportFragment;
 
@@ -37,28 +49,47 @@ public class HomeFragment extends SupportFragment implements RadioGroup.OnChecke
 
     private int prePosition = 0;
 
+
+    private boolean isOnTop = false;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
     }
 
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        isOnTop = true;
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        isOnTop = false;
+    }
+
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        SupportFragment firstFragment = findChildFragment(ChatFragment.class);
+        SupportFragment firstFragment = findChildFragment(MessageFragment.class);
         if (firstFragment == null) {
-            mFragments[0] = ChatFragment.newInstance();
+            mFragments[0] = MessageFragment.newInstance();
             mFragments[1] = FriendsFragment.newInstance();
-            mFragments[2] = MomentFragment.newInstance();
+            mFragments[2] = FindFragment.newInstance();
             mFragments[3] = MyFragment.newInstance();
             loadMultipleRootFragment(R.id.home_container, 0, mFragments[0], mFragments[1], mFragments[2], mFragments[3]);
         } else {
             mFragments[0] = firstFragment;
             mFragments[1] = findChildFragment(FriendsFragment.class);
-            mFragments[2] = findChildFragment(MomentFragment.class);
+            mFragments[2] = findChildFragment(FindFragment.class);
             mFragments[3] = findChildFragment(MyFragment.class);
         }
         prePosition = 0;
+
+        IntentFilter filter = new IntentFilter(AppConstants.ACTION_FRIEND);
+        getActivity().registerReceiver(addFriendReceiver, filter);
     }
 
 
@@ -114,6 +145,82 @@ public class HomeFragment extends SupportFragment implements RadioGroup.OnChecke
         }
     }
 
+    private String lastFrom;
+    /**
+     * 添加好友监听
+     */
+    private BroadcastReceiver addFriendReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int flag = intent.getIntExtra(AppConstants.INTENT_KEY_ADD_FRIEND, -1);
+            String from = intent.getStringExtra(AppConstants.INTENT_KEY_ADD_FRIEND_FROM);
+            if (flag == AppConstants.STATUS_ADD_FRIEND_OK) {
+                Toast.makeText(getActivity(), from.split("@")[0] + "通过了你的好友申请！", Toast.LENGTH_LONG).show();
+                ((FriendsFragment) mFragments[1]).loadData();
+            } else if (flag == AppConstants.STATUS_ADD_FRIEND_RECEIVE) {
+                if (isOnTop) {
+                    showApplyDialog(from);
+                } else {
+                    CommonUtil.showNotify(getActivity(), from.split("@")[0] + "请求加你为好友");
+                }
+                if(!lastFrom.equals(from)) {
+                    ((FriendsFragment) mFragments[1]).addFriendBadge();
+                }
+                lastFrom = from;
+            } else if (flag == AppConstants.STATUS_ADD_FRIEND_REJECJ) {
+                Toast.makeText(getActivity(), from.split("@")[0] + "拒绝了你的好友申请！", Toast.LENGTH_LONG).show();
+            }
+        }
+    };
+
+    /**
+     * 弹出请求添加好友对话框
+     *
+     * @param from
+     */
+    private void showApplyDialog(final String from) {
+
+        final TipDialog dialog = new TipDialog(getActivity());
+        dialog.setNegativeText("拒绝");
+        dialog.setPositiveText("接受");
+        dialog.setTipMessage(from.split("@")[0] + "请求加你为好友");
+        dialog.setOnTipClickListener(new TipDialog.OnTipClickListener() {
+            @Override
+            public void onPositiveClick() {
+                dialog.dismiss();
+                acceptRejectApply(from, 0);
+
+            }
+
+            @Override
+            public void onNegativeClick() {
+                dialog.dismiss();
+                acceptRejectApply(from, 1);
+            }
+        });
+        dialog.show();
+
+    }
+
+    private void acceptRejectApply(final String from, final int flag) {
+        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
+            @Override
+            public void onExecute() throws Exception {
+                if (flag == 0) {
+                    XMPPHelper.getInstance().accept(from);
+                } else {
+                    XMPPHelper.getInstance().refuse(from);
+                }
+            }
+
+            @Override
+            public void onFinish(Exception e) {
+                ((FriendsFragment) mFragments[1]).loadData();
+                ((FriendsFragment) mFragments[1]).hideBadge();
+            }
+        });
+    }
+
 
     private void showAddMenu() {
         View view = LayoutInflater.from(getActivity()).inflate(R.layout.popup_layout_add_menu, null);
@@ -156,6 +263,16 @@ public class HomeFragment extends SupportFragment implements RadioGroup.OnChecke
     public boolean onBackPressedSupport() {
         getActivity().moveTaskToBack(true);
         return true;
+    }
+
+    public void startFragment(SupportFragment fragment) {
+        start(fragment);
+    }
+
+    @Override
+    public void onDetach() {
+        getActivity().unregisterReceiver(addFriendReceiver);
+        super.onDetach();
     }
 
 }

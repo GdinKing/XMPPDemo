@@ -2,14 +2,15 @@ package com.android.king.xmppdemo.adapter;
 
 import android.content.Context;
 import android.king.xmppdemo.R;
-import com.android.king.xmppdemo.entity.ChatBean;
-import com.android.king.xmppdemo.util.CommonUtil;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.android.king.xmppdemo.entity.ChatBean;
+import com.android.king.xmppdemo.util.CommonUtil;
 
 import java.util.List;
 
@@ -70,9 +71,9 @@ public class ChatAdapter extends BaseAdapter {
         holder.tvName.setText(chatBean.getUser());
         holder.tvMessage.setText(chatBean.getMessage());
         holder.tvTime.setText(CommonUtil.formatTime(chatBean.getTime()));
-        holder.ivAvatar.setImageResource(R.mipmap.ic_launcher);
+        holder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
 
-        return null;
+        return convertView;
     }
 
     public void refreshData(List<ChatBean> beanList){

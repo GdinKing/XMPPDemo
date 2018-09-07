@@ -11,9 +11,7 @@ import android.view.View;
 import android.widget.TextView;
 
 /***
- * 名称：
- * 描述：
- * 最近修改时间：2018年09月07日 10:00分
+ * 提示对话框
  * @since 2018-09-07
  * @author king
  */
@@ -60,7 +58,7 @@ public class TipDialog extends Dialog {
             @Override
             public void onClick(View v) {
                 if (tipClickListener != null) {
-                    tipClickListener.onPositiveClick();
+                    tipClickListener.onNegativeClick();
                 }
             }
         });

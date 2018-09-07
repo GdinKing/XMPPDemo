@@ -2,6 +2,7 @@ package com.android.king.xmppdemo.adapter;
 
 import android.content.Context;
 import android.king.xmppdemo.R;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,13 +21,13 @@ import java.util.List;
  * @since 2018-09-04
  * @author king
  */
-public class UserAdapter extends BaseAdapter {
+public class FriendAdapter extends BaseAdapter {
 
     private List<User> dataList;
     private Context mContext;
 
 
-    public UserAdapter(Context mContext, List<User> dataList) {
+    public FriendAdapter(Context mContext, List<User> dataList) {
         this.dataList = dataList;
         this.mContext = mContext;
     }
@@ -56,7 +57,7 @@ public class UserAdapter extends BaseAdapter {
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder holder = null;
         if (convertView == null) {
-            convertView = LayoutInflater.from(mContext).inflate(R.layout.item_search_user, null);
+            convertView = LayoutInflater.from(mContext).inflate(R.layout.item_friend, null);
             holder = new ViewHolder();
             holder.init(convertView);
             convertView.setTag(holder);
@@ -65,8 +66,7 @@ public class UserAdapter extends BaseAdapter {
         }
 
         User user = dataList.get(position);
-        holder.tvName.setText(user.getName());
-        holder.tvAccount.setText("账号：" + user.getAccount());
+        holder.tvName.setText(!TextUtils.isEmpty(user.getNote()) ? user.getNote() : user.getAccount().split("@")[0]);
         if (user.getAvatar() != null) {
             holder.ivAvatar.setImageBitmap(user.getAvatar());
         } else {
@@ -83,13 +83,11 @@ public class UserAdapter extends BaseAdapter {
 
     static class ViewHolder {
         TextView tvName;
-        TextView tvAccount;
         ImageView ivAvatar;
 
 
         public void init(View v) {
             tvName = v.findViewById(R.id.tv_name);
-            tvAccount = v.findViewById(R.id.tv_account);
             ivAvatar = v.findViewById(R.id.iv_avatar);
         }
     }

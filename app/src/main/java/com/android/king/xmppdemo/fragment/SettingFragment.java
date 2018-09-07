@@ -2,23 +2,22 @@ package com.android.king.xmppdemo.fragment;
 
 import android.content.Intent;
 import android.king.xmppdemo.R;
+import android.view.View;
+import android.widget.TextView;
 
 import com.android.king.xmppdemo.config.AppConstants;
-import com.android.king.xmppdemo.listener.OnNetworkExecuteListener;
+import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
 import com.android.king.xmppdemo.ui.LoginActivity;
 import com.android.king.xmppdemo.util.SPUtil;
 import com.android.king.xmppdemo.view.TipDialog;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
 
-import android.view.View;
-import android.widget.TextView;
-
 
 /**
  * 设置
  */
-public class SettingFragment extends BaseFragment implements View.OnClickListener{
+public class SettingFragment extends BaseFragment implements View.OnClickListener {
 
     public static SettingFragment newInstance() {
         SettingFragment fragment = new SettingFragment();
@@ -34,7 +33,7 @@ public class SettingFragment extends BaseFragment implements View.OnClickListene
 
     @Override
     protected void initView() {
-        setTitle("添加好友");
+        setTitle("设置");
         tvLogout = rootView.findViewById(R.id.tv_logout);
         tvLogout.setOnClickListener(this);
     }
@@ -49,7 +48,7 @@ public class SettingFragment extends BaseFragment implements View.OnClickListene
      * 退出登录
      */
     private void logout() {
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteListener() {
+        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
             @Override
             public void onExecute() throws Exception {
                 XMPPHelper.getInstance().logout();
@@ -58,10 +57,10 @@ public class SettingFragment extends BaseFragment implements View.OnClickListene
 
             @Override
             public void onFinish(Exception e) {
-                if(e!=null){
+                if (e != null) {
                     return;
                 }
-                SPUtil.setBoolean(getActivity(), AppConstants.SP_KEY_LOGIN_STATUS,false);
+                SPUtil.setBoolean(getActivity(), AppConstants.SP_KEY_LOGIN_STATUS, false);
                 SPUtil.setString(getActivity(), AppConstants.SP_KEY_LOGIN_ACCOUNT, "");
                 SPUtil.setString(getActivity(), AppConstants.SP_KEY_LOGIN_PASSWOrD, "");
                 showToast("退出成功");
@@ -79,7 +78,7 @@ public class SettingFragment extends BaseFragment implements View.OnClickListene
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()){
+        switch (v.getId()) {
 
             case R.id.tv_logout:
                 showTip("是否退出登录？", new TipDialog.OnTipClickListener() {
@@ -90,7 +89,7 @@ public class SettingFragment extends BaseFragment implements View.OnClickListene
 
                     @Override
                     public void onNegativeClick() {
-
+                        hideTip();
                     }
                 });
                 break;

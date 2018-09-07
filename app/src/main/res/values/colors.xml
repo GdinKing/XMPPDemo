@@ -7,9 +7,11 @@
     <color name="white">#ffffff</color>
     <color name="gray">#515050</color>
     <color name="blue">#2d98fb</color>
+    <color name="green">#02b905</color>
+    <color name="light_green">#62f164</color>
     <color name="theme_color">#3c3f41</color>
     <color name="text_gray">#8a8a8a</color>
-    <color name="light_gray">#cecece</color>
+    <color name="light_gray">#c0cecece</color>
     <color name="text_green">#1ecc04</color>
     <color name="text_blue">#0d75eb</color>
     <color name="background">#ebebeb</color>
