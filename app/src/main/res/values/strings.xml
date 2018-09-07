@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">微聊</string>
+    <string name="str_my_account">我的账号：%s</string>
+</resources>

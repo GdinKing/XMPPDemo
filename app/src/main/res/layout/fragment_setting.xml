@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical">
+
+
+    <include
+        layout="@layout/actionbar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/actionbar_height" />
+
+    <TextView
+        android:id="@+id/tv_update_pwd"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/selector_white_gray"
+        android:gravity="center_vertical"
+        android:padding="15dp"
+        android:text="修改登录密码"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/tv_msg_tip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/selector_white_gray"
+        android:gravity="center_vertical"
+        android:padding="15dp"
+        android:text="新消息提醒"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/tv_privacy"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:background="@drawable/selector_white_gray"
+        android:gravity="center_vertical"
+        android:padding="15dp"
+        android:text="隐私"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/tv_common"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:background="@drawable/selector_white_gray"
+        android:gravity="center_vertical"
+        android:padding="15dp"
+        android:text="通用"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/tv_about"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/selector_white_gray"
+        android:gravity="center_vertical"
+        android:padding="15dp"
+        android:text="关于微聊"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/tv_logout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/selector_white_gray"
+        android:drawablePadding="10dp"
+        android:gravity="center_vertical"
+        android:padding="15dp"
+        android:text="退出登录"
+        android:textSize="16sp" />
+
+</LinearLayout>
