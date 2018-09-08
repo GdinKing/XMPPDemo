@@ -1,7 +1,6 @@
 package com.android.king.xmppdemo.fragment;
 
 import android.graphics.Bitmap;
-import android.king.xmppdemo.R;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -10,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
@@ -36,8 +36,6 @@ public class MyFragment extends SupportFragment implements View.OnClickListener 
         return fragment;
     }
 
-    private User userInfo;
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -54,14 +52,14 @@ public class MyFragment extends SupportFragment implements View.OnClickListener 
 
     public void loadData() {
         final String account = SPUtil.getString(getActivity(), AppConstants.SP_KEY_LOGIN_ACCOUNT);
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
+        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<User>() {
             @Override
-            public void onExecute() throws Exception {
-                userInfo = XMPPHelper.getInstance().getUserInfo(account+"@"+XMPPHelper.SERVER_DOMAIN);
+            public User onExecute() throws Exception {
+                return XMPPHelper.getInstance().getUserInfo(account);
             }
 
             @Override
-            public void onFinish(Exception e) {
+            public void onFinish(User userInfo,Exception e) {
                 if (e != null) {
                     Logger.e(e);
                     return;

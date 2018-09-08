@@ -1,4 +1,4 @@
-package com.android.king.xmppdemo.service;
+package com.android.king.xmppdemo.xmpp;
 
 import android.app.Service;
 import android.content.Intent;
@@ -6,8 +6,10 @@ import android.os.IBinder;
 
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.listener.IncomingMsgListener;
+import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
+import com.android.king.xmppdemo.net.NetworkExecutor;
 import com.android.king.xmppdemo.util.Logger;
-import com.android.king.xmppdemo.xmpp.XMPPHelper;
+import com.android.king.xmppdemo.util.SPUtil;
 
 import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.ConnectionListener;
@@ -41,6 +43,7 @@ public class XMPPService extends Service {
     public static AbstractXMPPConnection connection = null;
 
     private IncomingMsgListener incomingListener = null;
+    private ConnectionListener connectionListener;
 
     @Override
     public IBinder onBind(Intent arg0) {
@@ -53,9 +56,9 @@ public class XMPPService extends Service {
         connection = XMPPHelper.getInstance().getConnection();
         //重连
         ReconnectionManager manager = ReconnectionManager.getInstanceFor(connection);
-        manager.setFixedDelay(3);//断线3秒重连
+        manager.setFixedDelay(2);//断线2秒重连
         manager.enableAutomaticReconnection();
-        connection.addConnectionListener(new ConnectionListener() {
+        connectionListener = new ConnectionListener() {
 
             @Override
             public void connected(XMPPConnection xmppConnection) {
@@ -70,21 +73,26 @@ public class XMPPService extends Service {
             @Override
             public void connectionClosed() {
                 Logger.i("来自连接监听,conn正常关闭");
+                //这里smack不会自动重连，需要手动重连
+                reconnect();//重连
             }
 
             @Override
-            public void connectionClosedOnError(Exception arg0) {
+            public void connectionClosedOnError(Exception e) {
                 //这里就是网络不正常或者被挤掉断线激发的事件
-                if (arg0.getMessage().contains("conflict")) { //被挤掉线
+                if (e == null) {
+                    return;
+                }
+                Logger.e(e);
+                if (e.getMessage().contains("conflict")) { //被挤掉线
                 /*              log.e("来自连接监听,conn非正常关闭");
                                 log.e("非正常关闭异常:"+arg0.getMessage());
                                 log.e(con.isConnected());*/
-                    //关闭连接，由于是被人挤下线，可能是用户自己，所以关闭连接，让用户重新登录是一个比较好的选择
-                    XMPPHelper.getInstance().logout();
-                    //接下来你可以通过发送一个广播，提示用户被挤下线，重连很简单，就是重新登录
-                } else if (arg0.getMessage().contains("Connection timed out")) {//连接超时
-                    // 不做任何操作，会实现自动重连
+                    //被人挤下线,重新弹出登录
+                    sendBroadcast(new Intent(AppConstants.ACTION_RECONNECT_ERROR));
+                    stopSelf();
                 }
+                //这里smack会自动重连
             }
 
             @Override
@@ -109,8 +117,8 @@ public class XMPPService extends Service {
                 Logger.i("来自连接监听,重连失败");
                 Logger.e(e);
             }
-
-        });
+        };
+        connection.addConnectionListener(connectionListener);
         addFriendListener();
 
         if (incomingListener == null) {
@@ -135,12 +143,12 @@ public class XMPPService extends Service {
                 Logger.i(stanza.toString());
                 if (stanza instanceof Presence) {
                     Presence p = (Presence) stanza;
-                    Logger.i("收到回复："+p.getFrom() + "--" + p.getType());
+                    Logger.i("收到回复：" + p.getFrom() + "--" + p.getType());
                     Intent intent = new Intent(AppConstants.ACTION_FRIEND);
                     intent.putExtra(AppConstants.INTENT_KEY_ADD_FRIEND_FROM, p.getFrom().toString());
 
                     String status = p.getType().toString();
-                    switch (status){
+                    switch (status) {
                         case AppConstants.FriendStatus.SUBSCRIBE://收到好友请求
                             intent.putExtra(AppConstants.INTENT_KEY_ADD_FRIEND, AppConstants.STATUS_ADD_FRIEND_RECEIVE);
                             break;
@@ -159,6 +167,28 @@ public class XMPPService extends Service {
         connection.addAsyncStanzaListener(listener, filter);
     }
 
+    private void reconnect() {
+        final String account = SPUtil.getString(this, AppConstants.SP_KEY_LOGIN_ACCOUNT);
+        final String password = SPUtil.getString(this, AppConstants.SP_KEY_LOGIN_PASSWORD);
+        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<Void>() {
+            @Override
+            public Void onExecute() throws Exception {
+                XMPPHelper.getInstance().login(account, password, "android");
+                return null;
+            }
+
+            @Override
+            public void onFinish(Void result,Exception e) {
+                if (e != null) {
+                    Logger.e(e);
+                    sendBroadcast(new Intent(AppConstants.ACTION_RECONNECT_ERROR));
+                    return;
+                }
+            }
+        });
+
+
+    }
 
     public void sendUserMsg(Message.Type type, String subject,
                             String user, String body) throws Exception {
@@ -178,6 +208,9 @@ public class XMPPService extends Service {
 
     @Override
     public void onDestroy() {
+        if (connectionListener != null && connection != null) {
+            connection.removeConnectionListener(connectionListener);
+        }
         XMPPHelper.getInstance().logout();
         super.onDestroy();
     }

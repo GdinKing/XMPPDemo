@@ -13,10 +13,10 @@ import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
  * @since 2018-09-05
  * @author king
  */
-public class NetworkExecutor {
+public class NetworkExecutor<T> {
 
 
-    private OnNetworkExecuteCallback callback;
+    private OnNetworkExecuteCallback<T> callback;
 
     private Handler handler = new Handler(Looper.getMainLooper()) {
         @Override
@@ -25,8 +25,10 @@ public class NetworkExecutor {
                 Exception e = null;
                 if (msg.obj != null && msg.obj instanceof Exception) {
                     e = (Exception) msg.obj;
+                    callback.onFinish(null, e);
+                } else {
+                    callback.onFinish((T) msg.obj, null);
                 }
-                callback.onFinish(e);
             }
         }
     };
@@ -46,9 +48,9 @@ public class NetworkExecutor {
         public void run() {
             try {
                 if (callback != null) {
-                    callback.onExecute();
+                    T object = callback.onExecute();
+                    handler.obtainMessage(100, object).sendToTarget();
                 }
-                handler.sendEmptyMessage(100);
             } catch (Exception e) {
                 handler.obtainMessage(500, e).sendToTarget();
             }

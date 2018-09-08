@@ -3,12 +3,15 @@ package com.android.king.xmppdemo.view;
 import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Color;
-import android.king.xmppdemo.R;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.TextView;
+
+import com.android.king.xmppdemo.R;
+import com.android.king.xmppdemo.util.DisplayUtil;
 
 /***
  * 提示对话框
@@ -88,6 +91,9 @@ public class TipDialog extends Dialog {
     public void show() {
         super.show();
         getWindow().setWindowAnimations(R.style.TipDialogAnim); //设置窗口弹出动画
+        WindowManager.LayoutParams lp = getWindow().getAttributes();
+        lp.width = (int) (DisplayUtil.getScreenWidth(getContext()) * 0.9f); //设置宽度
+        getWindow().setAttributes(lp);
     }
 
     public void setOnTipClickListener(OnTipClickListener listener) {

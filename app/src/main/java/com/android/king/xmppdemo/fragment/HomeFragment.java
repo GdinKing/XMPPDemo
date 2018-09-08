@@ -1,12 +1,16 @@
 package com.android.king.xmppdemo.fragment;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.graphics.drawable.ColorDrawable;
-import android.king.xmppdemo.R;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,14 +21,17 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.config.AppConstants;
-import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
-import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.db.SQLiteHelper;
+import com.android.king.xmppdemo.entity.ChatBean;
+import com.android.king.xmppdemo.ui.LoginActivity;
 import com.android.king.xmppdemo.util.CommonUtil;
-import com.android.king.xmppdemo.view.TipDialog;
+import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
 
 import me.yokeyword.fragmentation.SupportFragment;
+import q.rorbin.badgeview.QBadgeView;
 
 
 /**
@@ -49,26 +56,7 @@ public class HomeFragment extends SupportFragment implements RadioGroup.OnChecke
 
     private int prePosition = 0;
 
-
-    private boolean isOnTop = false;
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
-
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        isOnTop = true;
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        isOnTop = false;
-    }
+    private View rootView;
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
@@ -90,22 +78,29 @@ public class HomeFragment extends SupportFragment implements RadioGroup.OnChecke
 
         IntentFilter filter = new IntentFilter(AppConstants.ACTION_FRIEND);
         getActivity().registerReceiver(addFriendReceiver, filter);
-    }
 
+        IntentFilter filter1 = new IntentFilter(AppConstants.ACTION_RECONNECT_ERROR);
+        getActivity().registerReceiver(reconnectReceiver, filter1);
+
+
+        IntentFilter msgFilter = new IntentFilter(AppConstants.ACTION_INCOME_MESSAGE);
+        getActivity().registerReceiver(messageReceiver, msgFilter);
+
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.fragment_home, container, false);
-        tvTitle = v.findViewById(R.id.tv_title);
-        ivAdd = v.findViewById(R.id.iv_add);
-        ivSearch = v.findViewById(R.id.iv_search);
+        rootView = inflater.inflate(R.layout.fragment_home, container, false);
+        tvTitle = rootView.findViewById(R.id.tv_title);
+        ivAdd = rootView.findViewById(R.id.iv_add);
+        ivSearch = rootView.findViewById(R.id.iv_search);
         ivAdd.setOnClickListener(this);
         ivSearch.setOnClickListener(this);
-        rgBottom = v.findViewById(R.id.rg_bottom);
+        rgBottom = rootView.findViewById(R.id.rg_bottom);
         rgBottom.setOnCheckedChangeListener(this);
         tvTitle.setText("微聊");
-        return v;
+        return rootView;
     }
 
 
@@ -145,7 +140,6 @@ public class HomeFragment extends SupportFragment implements RadioGroup.OnChecke
         }
     }
 
-    private String lastFrom;
     /**
      * 添加好友监听
      */
@@ -158,68 +152,124 @@ public class HomeFragment extends SupportFragment implements RadioGroup.OnChecke
                 Toast.makeText(getActivity(), from.split("@")[0] + "通过了你的好友申请！", Toast.LENGTH_LONG).show();
                 ((FriendsFragment) mFragments[1]).loadData();
             } else if (flag == AppConstants.STATUS_ADD_FRIEND_RECEIVE) {
-                if (isOnTop) {
-                    showApplyDialog(from);
-                } else {
-                    CommonUtil.showNotify(getActivity(), from.split("@")[0] + "请求加你为好友");
-                }
-                if(!lastFrom.equals(from)) {
-                    ((FriendsFragment) mFragments[1]).addFriendBadge();
-                }
-                lastFrom = from;
+                CommonUtil.showNotify(getActivity(), from.split("@")[0] + "请求加你为好友");
+
+                mHandler.obtainMessage(100, from).sendToTarget();
+
             } else if (flag == AppConstants.STATUS_ADD_FRIEND_REJECJ) {
                 Toast.makeText(getActivity(), from.split("@")[0] + "拒绝了你的好友申请！", Toast.LENGTH_LONG).show();
             }
         }
     };
 
+    private QBadgeView friendBadge;
+    private QBadgeView messageBadge;
+
+    @SuppressLint("HandlerLeak")
+    private Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+
+                case 100:
+                    String from = (String) msg.obj;
+                    checkApplyExist(from);
+                    ((FriendsFragment) mFragments[1]).checkApply();
+                    int count = ((FriendsFragment) mFragments[1]).getBadgeCount();
+                    if (count > 0) {
+                        friendBadge = new QBadgeView(getActivity());
+                        friendBadge.bindTarget(rootView.findViewById(R.id.rb_friends)).setBadgeNumber(count);
+                    } else {
+                        if (friendBadge != null) {
+                            friendBadge.hide(false);
+                        }
+                    }
+                    break;
+
+
+            }
+
+        }
+    };
+
     /**
-     * 弹出请求添加好友对话框
+     * 查询好友申请是否已存在数据库表中，存在则置isAgree为0，不存在就插入
      *
      * @param from
      */
-    private void showApplyDialog(final String from) {
-
-        final TipDialog dialog = new TipDialog(getActivity());
-        dialog.setNegativeText("拒绝");
-        dialog.setPositiveText("接受");
-        dialog.setTipMessage(from.split("@")[0] + "请求加你为好友");
-        dialog.setOnTipClickListener(new TipDialog.OnTipClickListener() {
-            @Override
-            public void onPositiveClick() {
-                dialog.dismiss();
-                acceptRejectApply(from, 0);
+    private void checkApplyExist(String from) {
+        Cursor cursor = SQLiteHelper.getInstance(getActivity()).query(AppConstants.TABLE_APPLY, new String[]{"fromUser", "isAgree"}, "fromUser=?", new String[]{from}, null, null, null);
+        if (null != cursor) {
+            if (cursor.moveToFirst()) {
+                ContentValues cv = new ContentValues();
+                cv.put("isAgree", 0);
+                SQLiteHelper.getInstance(getActivity()).update(AppConstants.TABLE_APPLY, cv, "fromUser=?", new String[]{from});
+            } else {
+                ContentValues cv = new ContentValues();
+                cv.put("fromUser", from);
+                cv.put("name", from.split("@")[0]);
+                cv.put("isAgree", 0);
+                SQLiteHelper.getInstance(getActivity()).insert(AppConstants.TABLE_APPLY, cv);
 
             }
-
-            @Override
-            public void onNegativeClick() {
-                dialog.dismiss();
-                acceptRejectApply(from, 1);
-            }
-        });
-        dialog.show();
-
+        }
     }
 
-    private void acceptRejectApply(final String from, final int flag) {
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
-            @Override
-            public void onExecute() throws Exception {
-                if (flag == 0) {
-                    XMPPHelper.getInstance().accept(from);
-                } else {
-                    XMPPHelper.getInstance().refuse(from);
-                }
-            }
+    /**
+     * 重新连接失败监听
+     */
+    private BroadcastReceiver reconnectReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            XMPPHelper.getInstance().logout();
+            startActivity(new Intent(getActivity(), LoginActivity.class));
+            getActivity().finish();
+        }
+    };
 
-            @Override
-            public void onFinish(Exception e) {
-                ((FriendsFragment) mFragments[1]).loadData();
-                ((FriendsFragment) mFragments[1]).hideBadge();
+    /**
+     * 弹出请求添加好友对话框
+     */
+//    private void showApplyDialog(final String from) {
+//
+//        final TipDialog dialog = new TipDialog(getActivity());
+//        dialog.setNegativeText("拒绝");
+//        dialog.setPositiveText("接受");
+//        dialog.setTipMessage(from.split("@")[0] + "请求加你为好友");
+//        dialog.setOnTipClickListener(new TipDialog.OnTipClickListener() {
+//            @Override
+//            public void onPositiveClick() {
+//                dialog.dismiss();
+//                acceptRejectApply(from, 0);
+//
+//            }
+//
+//            @Override
+//            public void onNegativeClick() {
+//                dialog.dismiss();
+//                acceptRejectApply(from, 1);
+//            }
+//        });
+//        dialog.show();
+//
+//    }
+
+
+    /**
+     * 收到新消息监听
+     */
+    private BroadcastReceiver messageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Logger.i("有新消息来啦！");
+            ChatBean bean = (ChatBean) intent.getSerializableExtra("chat");
+            if (bean == null) {
+                return;
             }
-        });
-    }
+            Logger.i(bean.getMessage());
+//            Toast.makeText(getActivity(), bean.getUser() + ":" + bean.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    };
 
 
     private void showAddMenu() {
@@ -272,6 +322,8 @@ public class HomeFragment extends SupportFragment implements RadioGroup.OnChecke
     @Override
     public void onDetach() {
         getActivity().unregisterReceiver(addFriendReceiver);
+        getActivity().unregisterReceiver(reconnectReceiver);
+        getActivity().unregisterReceiver(messageReceiver);
         super.onDetach();
     }
 

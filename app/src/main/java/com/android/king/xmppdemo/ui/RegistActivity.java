@@ -1,17 +1,17 @@
 package com.android.king.xmppdemo.ui;
 
-import android.king.xmppdemo.R;
-
-import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
-import com.android.king.xmppdemo.net.NetworkExecutor;
-import com.android.king.xmppdemo.util.Logger;
-import com.android.king.xmppdemo.xmpp.XMPPHelper;
 
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+
+import com.android.king.xmppdemo.R;
+import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
+import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.util.Logger;
+import com.android.king.xmppdemo.xmpp.XMPPHelper;
 
 /***
  * 注册界面
@@ -70,14 +70,15 @@ public class RegistActivity extends BaseActivity {
      */
     private void doRegist(final String account, final String password) {
         showLoading();
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
+        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<Void>() {
             @Override
-            public void onExecute() throws Exception {
+            public Void onExecute() throws Exception {
                 XMPPHelper.getInstance().registe(account, password, null);
+                return null;
             }
 
             @Override
-            public void onFinish(Exception e) {
+            public void onFinish(Void result, Exception e) {
                 hideLoading();
                 if (e != null) {
                     Logger.e(e);

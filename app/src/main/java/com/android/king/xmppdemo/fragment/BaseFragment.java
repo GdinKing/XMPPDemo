@@ -1,9 +1,6 @@
 package com.android.king.xmppdemo.fragment;
 
 import android.app.ProgressDialog;
-import android.king.xmppdemo.R;
-import com.android.king.xmppdemo.listener.OnBackClickListener;
-import com.android.king.xmppdemo.view.TipDialog;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -13,6 +10,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.android.king.xmppdemo.R;
+import com.android.king.xmppdemo.listener.OnBackClickListener;
+import com.android.king.xmppdemo.view.TipDialog;
 
 import me.yokeyword.fragmentation.SupportFragment;
 

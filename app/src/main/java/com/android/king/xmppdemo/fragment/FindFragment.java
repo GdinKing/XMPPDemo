@@ -1,11 +1,12 @@
 package com.android.king.xmppdemo.fragment;
 
-import android.king.xmppdemo.R;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
+import com.android.king.xmppdemo.R;
 
 import me.yokeyword.fragmentation.SupportFragment;
 import q.rorbin.badgeview.QBadgeView;

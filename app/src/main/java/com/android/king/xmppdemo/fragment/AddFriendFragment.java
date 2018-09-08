@@ -1,7 +1,6 @@
 package com.android.king.xmppdemo.fragment;
 
 import android.annotation.SuppressLint;
-import android.king.xmppdemo.R;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
@@ -12,8 +11,11 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.adapter.UserAdapter;
 import com.android.king.xmppdemo.entity.User;
+import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
+import com.android.king.xmppdemo.net.NetworkExecutor;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
 
@@ -130,20 +132,10 @@ public class AddFriendFragment extends BaseFragment implements AdapterView.OnIte
         @Override
         public void handleMessage(Message msg) {
             dismissProgress();
-            if (msg.what == 100) {
-                userAdapter.refreshData(dataList);
-            } else if (msg.what == 403) {
+            if (msg.what == 403) {
                 Toast.makeText(getActivity(), "连接断开", Toast.LENGTH_SHORT).show();
             } else if (msg.what == 404) {
                 Toast.makeText(getActivity(), "连接服务器失败", Toast.LENGTH_SHORT).show();
-            } else if (msg.what == 101) {
-                boolean flag = (boolean) msg.obj;
-                if (flag) {
-                    Toast.makeText(getActivity(), "发送申请成功", Toast.LENGTH_SHORT).show();
-                    pop();
-                } else {
-                    Toast.makeText(getActivity(), "发送申请失败", Toast.LENGTH_SHORT).show();
-                }
             }
         }
     };
@@ -157,17 +149,29 @@ public class AddFriendFragment extends BaseFragment implements AdapterView.OnIte
     }
 
     private void addFriend(final String account) {
-        new Thread() {
+        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<Boolean>() {
             @Override
-            public void run() {
-                try {
-                    boolean flag = XMPPHelper.getInstance().applyFriend(account);
-                    mHandler.obtainMessage(101, flag).sendToTarget();
-                } catch (Exception e) {
-                    mHandler.sendEmptyMessage(404);
+            public Boolean onExecute() throws Exception {
+                boolean flag = XMPPHelper.getInstance().applyFriend(account);
+                return flag;
+            }
+
+            @Override
+            public void onFinish(Boolean result, Exception e) {
+                if (e != null) {
+                    Logger.e(e);
+                    Toast.makeText(getActivity(), "连接服务器失败", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (result) {
+                    Toast.makeText(getActivity(), "发送申请成功", Toast.LENGTH_SHORT).show();
+                    pop();
+                } else {
+                    Toast.makeText(getActivity(), "发送申请失败", Toast.LENGTH_SHORT).show();
                 }
             }
-        }.start();
+        });
+
     }
 
     @Override

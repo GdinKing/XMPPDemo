@@ -1,6 +1,6 @@
 package com.android.king.xmppdemo.fragment;
 
-import android.king.xmppdemo.R;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -11,7 +11,10 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.adapter.FriendAdapter;
+import com.android.king.xmppdemo.config.AppConstants;
+import com.android.king.xmppdemo.db.SQLiteHelper;
 import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
@@ -67,20 +70,41 @@ public class FriendsFragment extends SupportFragment implements View.OnClickList
     }
 
     public void loadData() {
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
+        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<List<User>>() {
             @Override
-            public void onExecute() throws Exception {
-                dataList = XMPPHelper.getInstance().getAllFriends();
+            public List<User> onExecute() throws Exception {
+                List<User> userList = XMPPHelper.getInstance().getAllFriends();
+                return userList;
             }
 
             @Override
-            public void onFinish(Exception e) {
+            public void onFinish(List<User> result, Exception e) {
                 if (e != null) {
                     return;
                 }
+                dataList = result;
                 mAdapter.refreshData(dataList);
+                checkApply();
             }
+
         });
+    }
+
+
+    public void checkApply() {
+        Cursor cursor = SQLiteHelper.getInstance(getActivity()).query(AppConstants.TABLE_APPLY, null, null, null, null, null, null);
+        if (null != cursor) {
+            while (cursor.moveToNext()) {
+                int isAgree = cursor.getInt(cursor.getColumnIndex("isAgree"));
+                if (isAgree == 0) {//有未同意的
+                    addFriendBadge();
+                }
+            }
+        }
+    }
+
+    public int getBadgeCount() {
+        return badgeCount;
     }
 
     private int badgeCount = 0;
@@ -98,8 +122,10 @@ public class FriendsFragment extends SupportFragment implements View.OnClickList
                 .setBadgeNumber(badgeCount);
     }
 
+
     public void hideBadge() {
         if (badgeView != null) {
+            badgeCount = 0;
             badgeView.hide(false);
         }
     }
@@ -109,7 +135,7 @@ public class FriendsFragment extends SupportFragment implements View.OnClickList
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.rl_new_friend:
-
+                ((HomeFragment)getParentFragment()).startFragment(NewApplyFragment.newInstance());
                 break;
             case R.id.rl_multi_chat:
 

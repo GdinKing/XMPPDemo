@@ -1,7 +1,6 @@
 package com.android.king.xmppdemo.fragment;
 
 import android.graphics.Bitmap;
-import android.king.xmppdemo.R;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -9,6 +8,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
@@ -36,7 +36,6 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
     private TextView tvName;
     private ImageView ivAvatar;
 
-    private User userInfo;
     private String account;
     private String note;
 
@@ -67,14 +66,14 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
     @Override
     protected void initData() {
 
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
+        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<User>() {
             @Override
-            public void onExecute() throws Exception {
-                userInfo = XMPPHelper.getInstance().getUserInfo(account + "@" + XMPPHelper.SERVER_DOMAIN);
+            public User onExecute() throws Exception {
+                return XMPPHelper.getInstance().getUserInfo(account);
             }
 
             @Override
-            public void onFinish(Exception e) {
+            public void onFinish(User userInfo,Exception e) {
                 if (e != null) {
                     Logger.e(e);
                     return;

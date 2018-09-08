@@ -7,9 +7,9 @@ package com.android.king.xmppdemo.listener;
  * @since 2018-09-05
  * @author king
  */
-public interface OnNetworkExecuteCallback {
+public interface OnNetworkExecuteCallback<T> {
 
-    void onExecute() throws Exception;
+    T onExecute() throws Exception;
 
-    void onFinish(Exception e);
+    void onFinish(T result, Exception e);
 }

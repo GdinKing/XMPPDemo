@@ -1,10 +1,10 @@
 package com.android.king.xmppdemo.fragment;
 
 import android.content.Intent;
-import android.king.xmppdemo.R;
 import android.view.View;
 import android.widget.TextView;
 
+import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
@@ -48,21 +48,21 @@ public class SettingFragment extends BaseFragment implements View.OnClickListene
      * 退出登录
      */
     private void logout() {
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
+        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<Void>() {
             @Override
-            public void onExecute() throws Exception {
+            public Void onExecute() throws Exception {
                 XMPPHelper.getInstance().logout();
-
+                return null;
             }
 
             @Override
-            public void onFinish(Exception e) {
+            public void onFinish(Void result, Exception e) {
                 if (e != null) {
                     return;
                 }
                 SPUtil.setBoolean(getActivity(), AppConstants.SP_KEY_LOGIN_STATUS, false);
                 SPUtil.setString(getActivity(), AppConstants.SP_KEY_LOGIN_ACCOUNT, "");
-                SPUtil.setString(getActivity(), AppConstants.SP_KEY_LOGIN_PASSWOrD, "");
+                SPUtil.setString(getActivity(), AppConstants.SP_KEY_LOGIN_PASSWORD, "");
                 showToast("退出成功");
                 startActivity(new Intent(getActivity(), LoginActivity.class));
                 pop();

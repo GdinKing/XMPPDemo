@@ -6,16 +6,12 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.BitmapFactory;
-import android.king.xmppdemo.R;
 import android.os.Build;
 import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-import android.widget.RemoteViews;
-import android.widget.Toast;
 
-import com.android.king.xmppdemo.ui.MainActivity;
+import com.android.king.xmppdemo.R;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -23,8 +19,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Calendar;
 import java.util.Enumeration;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /***
  * 名称：
@@ -97,14 +91,11 @@ public class CommonUtil {
     public static final String ACTION_RECEIVE_NOTICE = "cn.android.king.receive.notice";
     public static final int NOTICE_ID_TYPE_0 = R.string.app_name;
 
-    public static void showNotify(Context context, String title) {
-        RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.notify_friend_tip);
-        remoteViews.setTextViewText(R.id.tv_msg, title);
-        remoteViews.setImageViewResource(R.id.iv_icon, R.mipmap.ic_launcher);
+    public static void showNotify(Context context, String msg) {
         Intent intent = new Intent(ACTION_RECEIVE_NOTICE);
         int requestCode = (int) SystemClock.uptimeMillis();
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        remoteViews.setOnClickPendingIntent(R.id.tv_receive, pendingIntent);
+
 
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(context.NOTIFICATION_SERVICE);
         NotificationCompat.Builder builder;
@@ -115,18 +106,13 @@ public class CommonUtil {
         } else {
             builder = new NotificationCompat.Builder(context);
         }
-        builder.setOngoing(true);
         builder.setPriority(NotificationCompat.PRIORITY_MAX);
         builder.setSmallIcon(R.mipmap.ic_launcher);
-
+        builder.setContentTitle("提示");
+        builder.setContentText(msg);
+        builder.setContentIntent(pendingIntent);
         Notification notification = builder.build();
-        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            notification = builder.build();
-            notification.bigContentView = remoteViews;
-        }
-        notification.contentView = remoteViews;
         notificationManager.notify(NOTICE_ID_TYPE_0, notification);
-
     }
 
 }

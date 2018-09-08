@@ -1,7 +1,6 @@
 package com.android.king.xmppdemo.adapter;
 
 import android.content.Context;
-import android.king.xmppdemo.R;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +9,7 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.entity.User;
 
 import java.util.List;

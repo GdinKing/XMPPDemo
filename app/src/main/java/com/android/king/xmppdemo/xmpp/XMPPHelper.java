@@ -167,7 +167,7 @@ public class XMPPHelper {
      * 退出登录
      */
     public void logout() {
-        if (xmppConnection != null) {
+        if (isConnected()) {
             xmppConnection.disconnect();
         }
     }
@@ -262,8 +262,11 @@ public class XMPPHelper {
      */
     public boolean applyFriend(String account) {
         try {
+            if (!account.contains("@")) {
+                account = account + "@" + SERVER_DOMAIN;
+            }
             Presence presence = new Presence(Presence.Type.subscribe);
-            presence.setTo(JidCreate.domainBareFrom(account));
+            presence.setTo(account);
             xmppConnection.sendStanza(presence);
             return true;
         } catch (Exception e) {
@@ -274,18 +277,19 @@ public class XMPPHelper {
     /**
      * 拒绝好友申请
      *
-     * @param userId 用户id
+     * @param account 用户
      */
-    public void refuse(String userId) {
+    public void refuse(String account) {
         try {
+            if (!account.contains("@")) {
+                account = account + "@" + SERVER_DOMAIN;
+            }
             Presence presence = new Presence(Presence.Type.unsubscribed);
-            presence.setTo(JidCreate.domainBareFrom(userId));
+            presence.setTo(account);
             xmppConnection.sendStanza(presence);
         } catch (SmackException.NotConnectedException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (XmppStringprepException e) {
             e.printStackTrace();
         }
     }
@@ -293,19 +297,24 @@ public class XMPPHelper {
     /**
      * 接收好友申请
      *
-     * @param userId 用户id
+     * @param account 用户
      */
-    public void accept(String userId) {
+    public void accept(String account) {
 
         try {
+            if (!account.contains("@")) {
+                account = account + "@" + SERVER_DOMAIN;
+            }
             Presence presence = new Presence(Presence.Type.subscribed);
-            presence.setTo(JidCreate.domainBareFrom(userId));
+            presence.setTo(account);
             xmppConnection.sendStanza(presence);
+
+            Presence reSubscription = new Presence(Presence.Type.subscribe);
+            reSubscription.setTo(account);
+            xmppConnection.sendStanza(reSubscription);
         } catch (SmackException.NotConnectedException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (XmppStringprepException e) {
             e.printStackTrace();
         }
     }
@@ -326,7 +335,9 @@ public class XMPPHelper {
             }
             Collection<RosterEntry> entries = roster.getEntries();
             for (RosterEntry entry : entries) {
-                Logger.i(entry.toString());
+                if ("none".equals(entry.getType().name())) {//none表示两者并没有成功添加好友
+                    continue;
+                }
                 User user = new User();
                 user.setAccount(entry.getJid().toString());
                 user.setNote(entry.getName());
@@ -340,14 +351,16 @@ public class XMPPHelper {
     /**
      * 获取用户的vcard信息
      *
-     * @param user
+     * @param account
      * @return
      * @throws XMPPException
      */
-    public VCard getUserVCard(String user) throws XMPPException, XmppStringprepException, SmackException.NotConnectedException, InterruptedException, SmackException.NoResponseException {
-        if (isConnected() && !TextUtils.isEmpty(user)) {
-            String jid = user + "@" + SERVER_DOMAIN;
-            VCard vCard = VCardManager.getInstanceFor(xmppConnection).loadVCard(JidCreate.entityBareFrom(jid));
+    public VCard getUserVCard(String account) throws XMPPException, XmppStringprepException, SmackException.NotConnectedException, InterruptedException, SmackException.NoResponseException {
+        if (isConnected() && !TextUtils.isEmpty(account)) {
+            if (!account.contains("@")) {
+                account = account + "@" + SERVER_DOMAIN;
+            }
+            VCard vCard = VCardManager.getInstanceFor(xmppConnection).loadVCard(JidCreate.entityBareFrom(account));
             return vCard;
         }
         return null;
@@ -356,7 +369,7 @@ public class XMPPHelper {
     /**
      * 获取用户信息
      *
-     * @param jid
+     * @param account
      * @return
      * @throws XMPPException
      * @throws XmppStringprepException
@@ -364,16 +377,24 @@ public class XMPPHelper {
      * @throws InterruptedException
      * @throws SmackException.NoResponseException
      */
-    public User getUserInfo(String jid) throws XMPPException, XmppStringprepException, SmackException.NotConnectedException, InterruptedException, SmackException.NoResponseException {
-        if (isConnected() && !TextUtils.isEmpty(jid)) {
-            VCard vCard = VCardManager.getInstanceFor(xmppConnection).loadVCard(JidCreate.entityBareFrom(jid));
+    public User getUserInfo(String account) throws XMPPException, XmppStringprepException, SmackException.NotConnectedException, InterruptedException, SmackException.NoResponseException {
+        if (isConnected() && !TextUtils.isEmpty(account)) {
+            if (!account.contains("@")) {
+                account = account + "@" + XMPPHelper.SERVER_DOMAIN;
+            }
+            VCard vCard = VCardManager.getInstanceFor(xmppConnection).loadVCard(JidCreate.entityBareFrom(account));
 
             User user = new User();
-            user.setName(vCard.getFirstName());
+            String firstName = vCard.getFirstName();
+            if (TextUtils.isEmpty(firstName)) {
+                user.setName(vCard.getFirstName());
+            } else {
+                user.setName(account.split("@")[0]);
+            }
             user.setNickName(vCard.getNickName());
-            user.setAccount(jid);
+            user.setAccount(account);
             user.setEmail(vCard.getEmailWork());
-            user.setAvatar(getUserAvatar(jid));
+            user.setAvatar(getUserAvatar(account));
             String sex = vCard.getField("sex");
             if (!TextUtils.isEmpty(sex)) {
                 user.setSex(Integer.parseInt(sex));
@@ -388,13 +409,16 @@ public class XMPPHelper {
     /**
      * 获取用户头像信息
      */
-    public Bitmap getUserAvatar(String jid) {
-        if (!isConnected() || TextUtils.isEmpty(jid)) {
+    public Bitmap getUserAvatar(String account) {
+        if (!isConnected() || TextUtils.isEmpty(account)) {
             return null;
         }
         Bitmap ic = null;
         try {
-            VCard vcard = VCardManager.getInstanceFor(xmppConnection).loadVCard(JidCreate.entityBareFrom(jid));
+            if (!account.contains("@")) {
+                account = account + "@" + SERVER_DOMAIN;
+            }
+            VCard vcard = VCardManager.getInstanceFor(xmppConnection).loadVCard(JidCreate.entityBareFrom(account));
             if (vcard == null || vcard.getAvatar() == null) {
                 return null;
             }
