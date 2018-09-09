@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@null">
+
+    <TextView
+        android:id="@+id/tv_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:layout_centerHorizontal="true"
+        android:text="2018-10-10"
+        android:textColor="@color/white"
+        android:textSize="12sp"
+        android:background="@color/tran_gray"
+        android:visibility="gone"
+        android:padding="5dp" />
+    <ImageView
+        android:id="@+id/iv_avatar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_margin="10dp"
+        android:layout_alignParentRight="true"
+        android:layout_below="@id/tv_time"
+        android:src="@drawable/ic_default_avatar" />
+
+    <TextView
+        android:id="@+id/tv_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tv_time"
+        android:layout_alignTop="@id/iv_avatar"
+        android:layout_marginLeft="10dp"
+        android:layout_toLeftOf="@id/iv_avatar"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="asd"
+        android:textColor="@color/black"
+        android:textSize="14sp" />
+
+    <com.android.king.xmppdemo.view.BubbleLinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tv_name"
+        android:layout_marginLeft="5dp"
+        android:layout_marginTop="10dp"
+        android:layout_toLeftOf="@id/iv_avatar"
+        android:orientation="vertical"
+        app:angle="5dp"
+        app:arrowHeight="10dp"
+        app:arrowLocation="right"
+        app:arrowPosition="5dp"
+        app:arrowWidth="8dp"
+        app:arrowCenter="false"
+        app:bubbleColor="@color/text_green">
+
+
+        <io.github.rockerhieu.emojicon.EmojiconTextView
+            android:id="@+id/tv_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxWidth="240dp"
+            android:layout_marginRight="8dp"
+            android:padding="8dp"
+            app:emojiconSize="28sp"
+            android:textColor="@color/black"
+            android:textSize="16sp" />
+    </com.android.king.xmppdemo.view.BubbleLinearLayout>
+</RelativeLayout>
