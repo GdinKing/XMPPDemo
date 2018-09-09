@@ -3,31 +3,27 @@ package com.android.king.xmppdemo.xmpp;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.widget.Toast;
 
-import com.android.king.xmppdemo.config.AppConstants;
+import com.android.king.xmppdemo.event.FriendEvent;
+import com.android.king.xmppdemo.event.ReconnectErrorEvent;
 import com.android.king.xmppdemo.listener.IncomingMsgListener;
-import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
-import com.android.king.xmppdemo.net.NetworkExecutor;
 import com.android.king.xmppdemo.util.Logger;
-import com.android.king.xmppdemo.util.SPUtil;
 
+import org.greenrobot.eventbus.EventBus;
 import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.ReconnectionManager;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.chat2.Chat;
 import org.jivesoftware.smack.chat2.ChatManager;
 import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.StanzaFilter;
 import org.jivesoftware.smack.filter.StanzaTypeFilter;
-import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smackx.offline.OfflineMessageManager;
-import org.jxmpp.jid.EntityBareJid;
-import org.jxmpp.jid.impl.JidCreate;
 
 /***
  * 名称：
@@ -58,6 +54,7 @@ public class XMPPService extends Service {
         ReconnectionManager manager = ReconnectionManager.getInstanceFor(connection);
         manager.setFixedDelay(2);//断线2秒重连
         manager.enableAutomaticReconnection();
+
         connectionListener = new ConnectionListener() {
 
             @Override
@@ -73,8 +70,6 @@ public class XMPPService extends Service {
             @Override
             public void connectionClosed() {
                 Logger.i("来自连接监听,conn正常关闭");
-                //这里smack不会自动重连，需要手动重连
-                reconnect();//重连
             }
 
             @Override
@@ -83,13 +78,10 @@ public class XMPPService extends Service {
                 if (e == null) {
                     return;
                 }
-                Logger.e(e);
-                if (e.getMessage().contains("conflict")) { //被挤掉线
-                /*              log.e("来自连接监听,conn非正常关闭");
-                                log.e("非正常关闭异常:"+arg0.getMessage());
-                                log.e(con.isConnected());*/
+                if (e.getMessage()!=null&&e.getMessage().contains("conflict")){ //被挤掉线
                     //被人挤下线,重新弹出登录
-                    sendBroadcast(new Intent(AppConstants.ACTION_RECONNECT_ERROR));
+                    Toast.makeText(getApplication(), "您的账号在别处登录", Toast.LENGTH_LONG).show();
+                    EventBus.getDefault().post(new ReconnectErrorEvent());
                     stopSelf();
                 }
                 //这里smack会自动重连
@@ -122,7 +114,7 @@ public class XMPPService extends Service {
         addFriendListener();
 
         if (incomingListener == null) {
-            incomingListener = new IncomingMsgListener(this);
+            incomingListener = new IncomingMsgListener();
         }
         if (chatManager == null) {
             chatManager = ChatManager.getInstanceFor(connection);
@@ -144,22 +136,9 @@ public class XMPPService extends Service {
                 if (stanza instanceof Presence) {
                     Presence p = (Presence) stanza;
                     Logger.i("收到回复：" + p.getFrom() + "--" + p.getType());
-                    Intent intent = new Intent(AppConstants.ACTION_FRIEND);
-                    intent.putExtra(AppConstants.INTENT_KEY_ADD_FRIEND_FROM, p.getFrom().toString());
-
+                    String from = p.getFrom().toString();
                     String status = p.getType().toString();
-                    switch (status) {
-                        case AppConstants.FriendStatus.SUBSCRIBE://收到好友请求
-                            intent.putExtra(AppConstants.INTENT_KEY_ADD_FRIEND, AppConstants.STATUS_ADD_FRIEND_RECEIVE);
-                            break;
-                        case AppConstants.FriendStatus.SUBSCRIBED://好友申请通过
-                            intent.putExtra(AppConstants.INTENT_KEY_ADD_FRIEND, AppConstants.STATUS_ADD_FRIEND_OK);
-                            break;
-                        case AppConstants.FriendStatus.UNSUBSCRIBE://好友申请拒绝
-                            intent.putExtra(AppConstants.INTENT_KEY_ADD_FRIEND, AppConstants.STATUS_ADD_FRIEND_REJECJ);
-                            break;
-                    }
-                    sendBroadcast(intent);
+                    EventBus.getDefault().post(new FriendEvent(from, status));
                 }
             }
 
@@ -167,43 +146,28 @@ public class XMPPService extends Service {
         connection.addAsyncStanzaListener(listener, filter);
     }
 
-    private void reconnect() {
-        final String account = SPUtil.getString(this, AppConstants.SP_KEY_LOGIN_ACCOUNT);
-        final String password = SPUtil.getString(this, AppConstants.SP_KEY_LOGIN_PASSWORD);
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<Void>() {
-            @Override
-            public Void onExecute() throws Exception {
-                XMPPHelper.getInstance().login(account, password, "android");
-                return null;
-            }
-
-            @Override
-            public void onFinish(Void result,Exception e) {
-                if (e != null) {
-                    Logger.e(e);
-                    sendBroadcast(new Intent(AppConstants.ACTION_RECONNECT_ERROR));
-                    return;
-                }
-            }
-        });
-
-
-    }
-
-    public void sendUserMsg(Message.Type type, String subject,
-                            String user, String body) throws Exception {
-        if (chatManager == null) {
-            chatManager = ChatManager.getInstanceFor(connection);
-            chatManager.addIncomingListener(incomingListener);
-        }
-        EntityBareJid groupJid = JidCreate.entityBareFrom(user);
-        Chat chat = chatManager.chatWith(groupJid);
-        Message msg = new Message();
-        msg.setType(type);
-        msg.setSubject(subject);
-        msg.setBody(body);
-        chat.send(msg);
-    }
+//    private void reconnect() {
+//        final String account = SPUtil.getString(this, AppConstants.SP_KEY_LOGIN_ACCOUNT);
+//        final String password = SPUtil.getString(this, AppConstants.SP_KEY_LOGIN_PASSWORD);
+//        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<Void>() {
+//            @Override
+//            public Void onExecute() throws Exception {
+//                XMPPHelper.getInstance().login(account, password, CommonUtil.getDeviceId(getApplication()));
+//                return null;
+//            }
+//
+//            @Override
+//            public void onFinish(Void result, Exception e) {
+//                if (e != null) {
+//                    Logger.e(e);
+//                    EventBus.getDefault().post(new ReconnectErrorEvent());
+//                    return;
+//                }
+//            }
+//        });
+//
+//
+//    }
 
 
     @Override

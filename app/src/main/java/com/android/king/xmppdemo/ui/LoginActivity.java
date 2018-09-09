@@ -3,11 +3,8 @@ package com.android.king.xmppdemo.ui;
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Intent;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
@@ -19,6 +16,7 @@ import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.util.CommonUtil;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.util.SPUtil;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
@@ -36,7 +34,7 @@ import org.jivesoftware.smack.packet.Presence;
  * @since 2018-09-04
  * @author king
  */
-public class LoginActivity extends AppCompatActivity implements View.OnClickListener {
+public class LoginActivity extends BaseActivity implements View.OnClickListener {
 
     private EditText etAccount;
     private EditText etPassword;
@@ -46,21 +44,25 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
     private ProgressDialog progressDialog;
 
-    @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
-        initView();
 
+    @Override
+    protected int getLayoutId() {
+        return R.layout.activity_login;
     }
 
-    private void initView() {
+    @Override
+    protected void initView() {
         etAccount = findViewById(R.id.et_account);
         etPassword = findViewById(R.id.et_password);
         btnLogin = findViewById(R.id.btn_login);
         tvRegist = findViewById(R.id.tv_regist);
         tvRegist.setOnClickListener(this);
         btnLogin.setOnClickListener(this);
+    }
+
+    @Override
+    protected void initData() {
+
     }
 
     @Override
@@ -89,14 +91,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
      * @param password
      */
     private void doLogin(final String account, final String password) {
-        if (progressDialog == null) {
-            progressDialog = new ProgressDialog(this);
-            progressDialog.setMessage("登录中...");
-            progressDialog.setCancelable(false);
-            progressDialog.setCanceledOnTouchOutside(false);
-        }
-        progressDialog.show();
-
+        showLoading("登录中...");
         NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
             @Override
             public Object onExecute() throws Exception {
@@ -149,7 +144,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
                     }
                 });
-                XMPPHelper.getInstance().login(account, password, "android");
+                XMPPHelper.getInstance().login(account, password, CommonUtil.getDeviceId(LoginActivity.this));
 
 
                 return null;
@@ -157,7 +152,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
             @Override
             public void onFinish(Object result, Exception e) {
-
+                hideLoading();
                 if (e != null) {
                     Logger.e(e);
                     if (e.getMessage().contains("not-authorized")) {//账号密码错误

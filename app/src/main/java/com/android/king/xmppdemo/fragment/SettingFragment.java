@@ -7,10 +7,10 @@ import android.widget.TextView;
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
+import com.android.king.xmppdemo.listener.OnTipDialogListener;
 import com.android.king.xmppdemo.net.NetworkExecutor;
 import com.android.king.xmppdemo.ui.LoginActivity;
 import com.android.king.xmppdemo.util.SPUtil;
-import com.android.king.xmppdemo.view.TipDialog;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
 
 
@@ -81,7 +81,7 @@ public class SettingFragment extends BaseFragment implements View.OnClickListene
         switch (v.getId()) {
 
             case R.id.tv_logout:
-                showTip("是否退出登录？", new TipDialog.OnTipClickListener() {
+                showTip("是否退出登录？", new OnTipDialogListener() {
                     @Override
                     public void onPositiveClick() {
                         logout();
@@ -89,7 +89,7 @@ public class SettingFragment extends BaseFragment implements View.OnClickListene
 
                     @Override
                     public void onNegativeClick() {
-                        hideTip();
+
                     }
                 });
                 break;

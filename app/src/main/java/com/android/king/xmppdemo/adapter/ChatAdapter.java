@@ -68,7 +68,7 @@ public class ChatAdapter extends BaseAdapter {
 
         ChatBean chatBean = dataList.get(position);
 
-        holder.tvName.setText(chatBean.getUser());
+        holder.tvName.setText(chatBean.getFrom().split("@")[0]);
         holder.tvMessage.setText(chatBean.getMessage());
         holder.tvTime.setText(CommonUtil.formatTime(chatBean.getTime()));
         holder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
@@ -76,28 +76,29 @@ public class ChatAdapter extends BaseAdapter {
         return convertView;
     }
 
-    public void refreshData(List<ChatBean> beanList){
+    public void refreshData(List<ChatBean> beanList) {
         this.dataList = beanList;
         notifyDataSetChanged();
     }
 
     /**
      * 是否存在与当前用户的对话
+     *
      * @param user
      * @return
      */
-    public boolean isExist(String user){
-        if(dataList==null){
-            return false;
+    public int isExist(String user) {
+        if (dataList == null) {
+            return -1;
         }
-        for(ChatBean bean:dataList){
-            if(bean.getUser().equals(user)){
-                return true;
+        for (int i = 0; i < dataList.size(); i++) {
+            ChatBean bean = dataList.get(i);
+            if (bean.getFrom().equals(user)) {
+                return i;
             }
         }
-        return false;
+        return -1;
     }
-
 
 
     static class ViewHolder {

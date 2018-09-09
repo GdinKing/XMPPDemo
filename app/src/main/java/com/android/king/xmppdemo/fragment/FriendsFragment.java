@@ -16,9 +16,15 @@ import com.android.king.xmppdemo.adapter.FriendAdapter;
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.db.SQLiteHelper;
 import com.android.king.xmppdemo.entity.User;
+import com.android.king.xmppdemo.event.AgreeEvent;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +68,18 @@ public class FriendsFragment extends SupportFragment implements View.OnClickList
         return v;
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        EventBus.getDefault().register(this);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        EventBus.getDefault().unregister(this);
+    }
+
     private void initData() {
         mAdapter = new FriendAdapter(getActivity(), dataList);
         lvFriends.setAdapter(mAdapter);
@@ -92,14 +110,20 @@ public class FriendsFragment extends SupportFragment implements View.OnClickList
 
 
     public void checkApply() {
-        Cursor cursor = SQLiteHelper.getInstance(getActivity()).query(AppConstants.TABLE_APPLY, null, null, null, null, null, null);
-        if (null != cursor) {
-            while (cursor.moveToNext()) {
-                int isAgree = cursor.getInt(cursor.getColumnIndex("isAgree"));
-                if (isAgree == 0) {//有未同意的
-                    addFriendBadge();
+        hideBadge();
+        try {
+            Cursor cursor = SQLiteHelper.getInstance(getActivity()).rawQuery("select * from " + AppConstants.TABLE_APPLY, null);
+            if (null != cursor) {
+                while (cursor.moveToNext()) {
+                    int isAgree = cursor.getInt(cursor.getColumnIndex("isAgree"));
+                    if (isAgree == 0) {//有未同意的
+                        addFriendBadge();
+                    }
                 }
+
             }
+        } catch (Exception e) {
+            Logger.e(e);
         }
     }
 
@@ -120,6 +144,7 @@ public class FriendsFragment extends SupportFragment implements View.OnClickList
                 .setGravityOffset(10.0f, true)
                 .setBadgePadding(8.0f, true)
                 .setBadgeNumber(badgeCount);
+        ((HomeFragment) getParentFragment()).addFriendBadge(badgeCount);
     }
 
 
@@ -135,7 +160,7 @@ public class FriendsFragment extends SupportFragment implements View.OnClickList
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.rl_new_friend:
-                ((HomeFragment)getParentFragment()).startFragment(NewApplyFragment.newInstance());
+                ((HomeFragment) getParentFragment()).startFragment(NewApplyFragment.newInstance());
                 break;
             case R.id.rl_multi_chat:
 
@@ -147,5 +172,11 @@ public class FriendsFragment extends SupportFragment implements View.OnClickList
     public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
         User user = dataList.get(position);
         ((HomeFragment) getParentFragment()).startFragment(UserFragment.newInstance(user.getAccount(), user.getNote()));
+    }
+
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(AgreeEvent event) {
+        checkApply();
     }
 }

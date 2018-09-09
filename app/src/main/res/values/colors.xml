@@ -12,6 +12,7 @@
     <color name="theme_color">#3c3f41</color>
     <color name="text_gray">#8a8a8a</color>
     <color name="light_gray">#c0cecece</color>
+    <color name="tran_gray">#c0858585</color>
     <color name="text_green">#1ecc04</color>
     <color name="text_blue">#0d75eb</color>
     <color name="background">#ebebeb</color>

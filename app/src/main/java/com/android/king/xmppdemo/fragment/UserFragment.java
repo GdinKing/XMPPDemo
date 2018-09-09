@@ -9,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.android.king.xmppdemo.R;
+import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
@@ -33,7 +34,7 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
     private TextView btnSend;
     private TextView tvAccount;
     private TextView tvNick;
-    private TextView tvName;
+    private TextView tvNote; //备注名
     private ImageView ivAvatar;
 
     private String account;
@@ -58,7 +59,7 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
         tvAccount = rootView.findViewById(R.id.tv_account);
         btnSend = rootView.findViewById(R.id.btn_send_msg);
         tvNick = rootView.findViewById(R.id.tv_nick);
-        tvName = rootView.findViewById(R.id.tv_name);
+        tvNote = rootView.findViewById(R.id.tv_name);
         ivAvatar = rootView.findViewById(R.id.iv_avatar);
         btnSend.setOnClickListener(this);
     }
@@ -73,13 +74,12 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
             }
 
             @Override
-            public void onFinish(User userInfo,Exception e) {
+            public void onFinish(User userInfo, Exception e) {
                 if (e != null) {
                     Logger.e(e);
                     return;
                 }
                 if (userInfo != null) {
-                    Logger.i("获取用户信息" + userInfo.toString());
                     String userAccount = userInfo.getAccount().split("@")[0];
                     String nick = userInfo.getNickName();
                     String userNote = userInfo.getNote();
@@ -87,22 +87,29 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
                     int sex = userInfo.getSex();
 
                     tvAccount.setText("账号：" + userAccount);
-                    tvName.setText(!TextUtils.isEmpty(userNote) ? userNote : note);
-                    if (sex == 0) {
-                        tvName.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_man, 0);
-                    } else if (sex == 1) {
-                        tvName.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_woman, 0);
+                    if (!TextUtils.isEmpty(userNote)) {
+                        tvNote.setText(userNote);
+                    } else if (!TextUtils.isEmpty(note)) {
+                        tvNote.setText(note);
                     } else {
-                        tvName.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
+                        tvNote.setText("未填写");
                     }
-                    tvNick.setText(!TextUtils.isEmpty(nick) ? nick : userAccount);
+                    if (sex == 0) {
+                        tvNote.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_man, 0);
+                    } else if (sex == 1) {
+                        tvNote.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_woman, 0);
+                    } else {
+                        tvNote.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
+                    }
+                    tvNick.setText("昵称：" + (!TextUtils.isEmpty(nick) ? nick : userAccount));
 
                     if (avatar != null) {
                         ivAvatar.setImageBitmap(avatar);
                     }
                 } else {
-                    tvAccount.setText("账号：" + account);
-                    tvName.setText(account);
+                    tvAccount.setText("账号：" + account.split("@")[0]);
+                    tvAccount.setText("tvNick：" + account.split("@")[0]);
+                    tvNote.setText(account);
                     ivAvatar.setImageResource(R.drawable.ic_default_avatar);
                 }
 
@@ -118,6 +125,10 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
 
     @Override
     public void onClick(View view) {
-
+        switch (view.getId()) {
+            case R.id.btn_send_msg:
+                start(MessageFragment.newInstance(account, account.split("@")[0], AppConstants.ChatType.SINGLE));
+                break;
+        }
     }
 }

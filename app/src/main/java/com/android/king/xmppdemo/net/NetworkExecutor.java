@@ -41,7 +41,9 @@ public class NetworkExecutor<T> {
         this.callback = listener;
         AsyncHelper.getInstance().execute(new RunTask());
     }
-
+    public void execute(Runnable runnable) {
+        AsyncHelper.getInstance().execute(runnable);
+    }
 
     public class RunTask implements Runnable {
         @Override

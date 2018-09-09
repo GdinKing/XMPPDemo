@@ -20,6 +20,7 @@ public class User implements Serializable {
     private String account;
     private String group;
     private String email;
+    private String sign;
     private int sex;
 
     public String getName() {
@@ -84,5 +85,13 @@ public class User implements Serializable {
 
     public void setNote(String note) {
         this.note = note;
+    }
+
+    public String getSign() {
+        return sign;
+    }
+
+    public void setSign(String sign) {
+        this.sign = sign;
     }
 }

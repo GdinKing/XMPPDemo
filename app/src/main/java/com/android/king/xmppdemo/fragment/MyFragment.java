@@ -30,6 +30,9 @@ public class MyFragment extends SupportFragment implements View.OnClickListener 
     private TextView tvName;
     private TextView tvAccount;
     private ImageView ivAvatar;
+    private View btnMyInfo;
+
+    private User user;
 
     public static MyFragment newInstance() {
         MyFragment fragment = new MyFragment();
@@ -43,8 +46,10 @@ public class MyFragment extends SupportFragment implements View.OnClickListener 
         ivAvatar = v.findViewById(R.id.iv_avatar);
         tvName = v.findViewById(R.id.tv_name);
         tvAccount = v.findViewById(R.id.tv_account);
+        btnMyInfo = v.findViewById(R.id.ll_my_info);
         tvSetting = v.findViewById(R.id.tv_setting);
         tvSetting.setOnClickListener(this);
+        btnMyInfo.setOnClickListener(this);
         loadData();
         return v;
     }
@@ -59,13 +64,13 @@ public class MyFragment extends SupportFragment implements View.OnClickListener 
             }
 
             @Override
-            public void onFinish(User userInfo,Exception e) {
+            public void onFinish(User userInfo, Exception e) {
                 if (e != null) {
                     Logger.e(e);
                     return;
                 }
                 if (userInfo != null) {
-                    Logger.i("获取用户信息" + userInfo.toString());
+                    user = userInfo;
                     String userAccount = userInfo.getAccount();
                     String name = userInfo.getName();
                     Bitmap avatar = userInfo.getAvatar();
@@ -82,9 +87,13 @@ public class MyFragment extends SupportFragment implements View.OnClickListener 
                     if (avatar != null) {
                         ivAvatar.setImageBitmap(avatar);
                     }
-                }else{
+                } else {
+                    user = new User();
+                    user.setAccount(account);
+                    user.setName(account.split("@")[0]);
+                    user.setNickName(account.split("@")[0]);
                     tvAccount.setText("账号：" + account);
-                    tvName.setText(account);
+                    tvName.setText(account.split("@")[0]);
                     ivAvatar.setImageResource(R.drawable.ic_default_avatar);
                 }
 
@@ -97,6 +106,12 @@ public class MyFragment extends SupportFragment implements View.OnClickListener 
         switch (v.getId()) {
             case R.id.tv_setting:
                 ((HomeFragment) getParentFragment()).start(SettingFragment.newInstance());
+                break;
+            case R.id.ll_my_info:
+                if (user == null) {
+                    return;
+                }
+                ((HomeFragment) getParentFragment()).start(MyInfoFragment.newInstance(user));
                 break;
         }
     }

@@ -1,34 +1,35 @@
 package com.android.king.xmppdemo.fragment;
 
-import android.annotation.SuppressLint;
-import android.content.BroadcastReceiver;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.database.Cursor;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.support.annotation.Nullable;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
-import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.db.SQLiteHelper;
-import com.android.king.xmppdemo.entity.ChatBean;
+import com.android.king.xmppdemo.event.FriendEvent;
+import com.android.king.xmppdemo.event.ReconnectErrorEvent;
+import com.android.king.xmppdemo.net.NetworkExecutor;
 import com.android.king.xmppdemo.ui.LoginActivity;
 import com.android.king.xmppdemo.util.CommonUtil;
 import com.android.king.xmppdemo.util.Logger;
+import com.android.king.xmppdemo.util.SPUtil;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import me.yokeyword.fragmentation.SupportFragment;
 import q.rorbin.badgeview.QBadgeView;
@@ -37,7 +38,7 @@ import q.rorbin.badgeview.QBadgeView;
 /**
  * 微聊
  */
-public class HomeFragment extends SupportFragment implements RadioGroup.OnCheckedChangeListener, View.OnClickListener {
+public class HomeFragment extends SupportFragment implements View.OnClickListener {
 
     public static HomeFragment newInstance() {
         HomeFragment fragment = new HomeFragment();
@@ -46,8 +47,13 @@ public class HomeFragment extends SupportFragment implements RadioGroup.OnChecke
 
     private SupportFragment[] mFragments = new SupportFragment[4];
 
-    private RadioGroup rgBottom;
+    private TextView tabFriends;
+    private TextView tabMessage;
+    private TextView tabFind;
+    private TextView tabMy;
     private TextView tvTitle;
+
+    private View lastSelect;
 
     private ImageView ivSearch;
     private ImageView ivAdd;
@@ -61,9 +67,9 @@ public class HomeFragment extends SupportFragment implements RadioGroup.OnChecke
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        SupportFragment firstFragment = findChildFragment(MessageFragment.class);
+        SupportFragment firstFragment = findChildFragment(ChatFragment.class);
         if (firstFragment == null) {
-            mFragments[0] = MessageFragment.newInstance();
+            mFragments[0] = ChatFragment.newInstance();
             mFragments[1] = FriendsFragment.newInstance();
             mFragments[2] = FindFragment.newInstance();
             mFragments[3] = MyFragment.newInstance();
@@ -76,16 +82,22 @@ public class HomeFragment extends SupportFragment implements RadioGroup.OnChecke
         }
         prePosition = 0;
 
-        IntentFilter filter = new IntentFilter(AppConstants.ACTION_FRIEND);
-        getActivity().registerReceiver(addFriendReceiver, filter);
+    }
+    private String getCurrentLogin(){
+        return SPUtil.getString(getActivity(), AppConstants.SP_KEY_LOGIN_ACCOUNT);
+    }
 
-        IntentFilter filter1 = new IntentFilter(AppConstants.ACTION_RECONNECT_ERROR);
-        getActivity().registerReceiver(reconnectReceiver, filter1);
+    @Override
+    public void onStart() {
+        super.onStart();
+        hideSoftInput();
+        EventBus.getDefault().register(this);
+    }
 
-
-        IntentFilter msgFilter = new IntentFilter(AppConstants.ACTION_INCOME_MESSAGE);
-        getActivity().registerReceiver(messageReceiver, msgFilter);
-
+    @Override
+    public void onStop() {
+        super.onStop();
+        EventBus.getDefault().unregister(this);
     }
 
     @Override
@@ -97,35 +109,22 @@ public class HomeFragment extends SupportFragment implements RadioGroup.OnChecke
         ivSearch = rootView.findViewById(R.id.iv_search);
         ivAdd.setOnClickListener(this);
         ivSearch.setOnClickListener(this);
-        rgBottom = rootView.findViewById(R.id.rg_bottom);
-        rgBottom.setOnCheckedChangeListener(this);
+
+        tabFriends = rootView.findViewById(R.id.tv_friends);
+        tabMessage = rootView.findViewById(R.id.tv_message);
+        tabFind = rootView.findViewById(R.id.tv_find);
+        tabMy = rootView.findViewById(R.id.tv_my);
+
+        tabMessage.setOnClickListener(this);
+        tabFriends.setOnClickListener(this);
+        tabFind.setOnClickListener(this);
+        tabMy.setOnClickListener(this);
         tvTitle.setText("微聊");
+        tabMessage.setSelected(true);
+        lastSelect = tabMessage;
         return rootView;
     }
 
-
-    @Override
-    public void onCheckedChanged(RadioGroup group, int checkedId) {
-        switch (checkedId) {
-            case R.id.rb_chat:
-                showHideFragment(mFragments[0], mFragments[prePosition]);
-                prePosition = 0;
-                break;
-            case R.id.rb_friends:
-                showHideFragment(mFragments[1], mFragments[prePosition]);
-                prePosition = 1;
-                break;
-            case R.id.rb_moment:
-                showHideFragment(mFragments[2], mFragments[prePosition]);
-                prePosition = 2;
-                break;
-            case R.id.rb_my:
-                showHideFragment(mFragments[3], mFragments[prePosition]);
-                ((MyFragment) mFragments[3]).loadData();
-                prePosition = 3;
-                break;
-        }
-    }
 
     @Override
     public void onClick(View v) {
@@ -136,64 +135,78 @@ public class HomeFragment extends SupportFragment implements RadioGroup.OnChecke
             case R.id.iv_search:
 
                 break;
-
+            case R.id.tv_message:
+                lastSelect.setSelected(false);
+                tabMessage.setSelected(true);
+                lastSelect = tabMessage;
+                showHideFragment(mFragments[0], mFragments[prePosition]);
+                prePosition = 0;
+                break;
+            case R.id.tv_friends:
+                lastSelect.setSelected(false);
+                tabFriends.setSelected(true);
+                lastSelect = tabFriends;
+                showHideFragment(mFragments[1], mFragments[prePosition]);
+                prePosition = 1;
+                break;
+            case R.id.tv_find:
+                lastSelect.setSelected(false);
+                tabFind.setSelected(true);
+                lastSelect = tabFind;
+                showHideFragment(mFragments[2], mFragments[prePosition]);
+                prePosition = 2;
+                break;
+            case R.id.tv_my:
+                lastSelect.setSelected(false);
+                tabMy.setSelected(true);
+                lastSelect = tabMy;
+                showHideFragment(mFragments[3], mFragments[prePosition]);
+                ((MyFragment) mFragments[3]).loadData();
+                prePosition = 3;
+                break;
         }
     }
 
     /**
-     * 添加好友监听
+     * 好友申请/状态
+     *
+     * @param event
      */
-    private BroadcastReceiver addFriendReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            int flag = intent.getIntExtra(AppConstants.INTENT_KEY_ADD_FRIEND, -1);
-            String from = intent.getStringExtra(AppConstants.INTENT_KEY_ADD_FRIEND_FROM);
-            if (flag == AppConstants.STATUS_ADD_FRIEND_OK) {
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onFriendEvent(FriendEvent event) {
+        String from = event.from;
+        switch (event.status) {
+            case AppConstants.FriendStatus.SUBSCRIBE:
+                CommonUtil.showNotify(getActivity(), from.split("@")[0] + "请求加你为好友");
+                checkApplyExist(from);
+                ((FriendsFragment) mFragments[1]).checkApply();
+                break;
+            case AppConstants.FriendStatus.SUBSCRIBED:
                 Toast.makeText(getActivity(), from.split("@")[0] + "通过了你的好友申请！", Toast.LENGTH_LONG).show();
                 ((FriendsFragment) mFragments[1]).loadData();
-            } else if (flag == AppConstants.STATUS_ADD_FRIEND_RECEIVE) {
-                CommonUtil.showNotify(getActivity(), from.split("@")[0] + "请求加你为好友");
+                break;
+            case AppConstants.FriendStatus.UNSUBSCRIBE:
+                Logger.i(from.split("@")[0] + "拒绝了你的好友申请！");
+                break;
+            case AppConstants.FriendStatus.UNAVAILABLE:
 
-                mHandler.obtainMessage(100, from).sendToTarget();
-
-            } else if (flag == AppConstants.STATUS_ADD_FRIEND_REJECJ) {
-                Toast.makeText(getActivity(), from.split("@")[0] + "拒绝了你的好友申请！", Toast.LENGTH_LONG).show();
-            }
-        }
-    };
-
-    private QBadgeView friendBadge;
-    private QBadgeView messageBadge;
-
-    @SuppressLint("HandlerLeak")
-    private Handler mHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-
-                case 100:
-                    String from = (String) msg.obj;
-                    checkApplyExist(from);
-                    ((FriendsFragment) mFragments[1]).checkApply();
-                    int count = ((FriendsFragment) mFragments[1]).getBadgeCount();
-                    if (count > 0) {
-                        friendBadge = new QBadgeView(getActivity());
-                        friendBadge.bindTarget(rootView.findViewById(R.id.rb_friends)).setBadgeNumber(count);
-                    } else {
-                        if (friendBadge != null) {
-                            friendBadge.hide(false);
+                if(from.split("@")[0].equals(getCurrentLogin())){
+                    //如果是自身离线了，则重新上线，否则会断开闲置连接
+                    NetworkExecutor.getInstance().execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            XMPPHelper.getInstance().changeStatus(AppConstants.FriendStatus.AVAILABLE);
                         }
-                    }
-                    break;
-
-
-            }
-
+                    });
+                }
+                break;
         }
-    };
+    }
+
 
     /**
      * 查询好友申请是否已存在数据库表中，存在则置isAgree为0，不存在就插入
+     * 这里的数据库查询并不算太耗时，所以没有用异步
      *
      * @param from
      */
@@ -215,61 +228,18 @@ public class HomeFragment extends SupportFragment implements RadioGroup.OnChecke
         }
     }
 
-    /**
-     * 重新连接失败监听
-     */
-    private BroadcastReceiver reconnectReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            XMPPHelper.getInstance().logout();
-            startActivity(new Intent(getActivity(), LoginActivity.class));
-            getActivity().finish();
-        }
-    };
 
     /**
-     * 弹出请求添加好友对话框
+     * 重连失败回调
+     *
+     * @param event
      */
-//    private void showApplyDialog(final String from) {
-//
-//        final TipDialog dialog = new TipDialog(getActivity());
-//        dialog.setNegativeText("拒绝");
-//        dialog.setPositiveText("接受");
-//        dialog.setTipMessage(from.split("@")[0] + "请求加你为好友");
-//        dialog.setOnTipClickListener(new TipDialog.OnTipClickListener() {
-//            @Override
-//            public void onPositiveClick() {
-//                dialog.dismiss();
-//                acceptRejectApply(from, 0);
-//
-//            }
-//
-//            @Override
-//            public void onNegativeClick() {
-//                dialog.dismiss();
-//                acceptRejectApply(from, 1);
-//            }
-//        });
-//        dialog.show();
-//
-//    }
-
-
-    /**
-     * 收到新消息监听
-     */
-    private BroadcastReceiver messageReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Logger.i("有新消息来啦！");
-            ChatBean bean = (ChatBean) intent.getSerializableExtra("chat");
-            if (bean == null) {
-                return;
-            }
-            Logger.i(bean.getMessage());
-//            Toast.makeText(getActivity(), bean.getUser() + ":" + bean.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    };
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onReconnectErrorEvent(ReconnectErrorEvent event) {
+        XMPPHelper.getInstance().logout();
+        startActivity(new Intent(getActivity(), LoginActivity.class));
+        getActivity().finish();
+    }
 
 
     private void showAddMenu() {
@@ -319,12 +289,45 @@ public class HomeFragment extends SupportFragment implements RadioGroup.OnChecke
         start(fragment);
     }
 
-    @Override
-    public void onDetach() {
-        getActivity().unregisterReceiver(addFriendReceiver);
-        getActivity().unregisterReceiver(reconnectReceiver);
-        getActivity().unregisterReceiver(messageReceiver);
-        super.onDetach();
+    private QBadgeView friendBadge;
+    private QBadgeView messageBadge;
+
+    public void addFriendBadge(int count) {
+
+        hideFriendBadge();
+        if (count <= 0) {
+            return;
+        }
+        friendBadge = new QBadgeView(getActivity());
+        friendBadge.bindTarget(tabFriends)
+                .setBadgeGravity(Gravity.TOP | Gravity.END)
+                .setGravityOffset(10, 0, true)
+                .setBadgeNumber(count);
     }
+
+    public void hideFriendBadge() {
+        if (friendBadge != null) {
+            friendBadge.hide(false);
+        }
+    }
+
+    public void addMessageBadge(int count) {
+        hideMessageBadge();
+        if (count <= 0) {
+            return;
+        }
+        messageBadge = new QBadgeView(getActivity());
+        messageBadge.bindTarget(tabMessage)
+                .setBadgeGravity(Gravity.TOP | Gravity.END)
+                .setGravityOffset(10, 0, true)
+                .setBadgeNumber(count);
+    }
+
+    public void hideMessageBadge() {
+        if (messageBadge != null) {
+            messageBadge.hide(false);
+        }
+    }
+
 
 }

@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.text.TextUtils;
 
+import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.util.Logger;
 
@@ -11,6 +12,9 @@ import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.SASLAuthentication;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.chat2.Chat;
+import org.jivesoftware.smack.chat2.ChatManager;
+import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.provider.ProviderManager;
 import org.jivesoftware.smack.roster.Roster;
@@ -103,6 +107,7 @@ public class XMPPHelper {
             builder.setHostAddress(addr);
             builder.setPort(5222);
             builder.setSendPresence(true);
+            builder.setConnectTimeout(15000);
             builder.setCompressionEnabled(true);
             builder.setSecurityMode(XMPPTCPConnectionConfiguration.SecurityMode.disabled);
             builder.setDebuggerEnabled(false);
@@ -129,14 +134,44 @@ public class XMPPHelper {
      * @throws IOException
      */
     public void login(String username, String password, String resource) throws IOException, InterruptedException, XMPPException, SmackException {
-        if (xmppConnection == null) {
-            openConnection();
+        if (isConnected()) {
+            xmppConnection.disconnect();
         }
-        if (!isConnected()) {
-            xmppConnection.connect();
-        }
+        xmppConnection.connect();
+
         SASLAuthentication.blacklistSASLMechanism("ANONYMOUS");
+        SASLAuthentication.blacklistSASLMechanism("CRAM-MD5");
+        SASLAuthentication.blacklistSASLMechanism("DIGEST-MD5");
+        SASLAuthentication.unBlacklistSASLMechanism("PLAIN");
+        SASLAuthentication.blacklistSASLMechanism("SCRAM-SHA-1-PLUS");
+
         xmppConnection.login(username, password, Resourcepart.from(resource));
+    }
+
+    /**
+     * 修改用户在线状态
+     *
+     * @param status
+     */
+    public void changeStatus(String status) {
+        try {
+            Presence presence = null;
+            switch (status) {
+                case AppConstants.FriendStatus.AVAILABLE:
+                    presence = new Presence(Presence.Type.available);//在线
+                    break;
+                case AppConstants.FriendStatus.UNAVAILABLE:
+                    presence = new Presence(Presence.Type.unavailable);//离线
+                    break;
+                default:
+                    presence = new Presence(Presence.Type.available);//在线
+                    break;
+            }
+//            presence.setTo(userName); 这里可以设置对某人显示离线（即隐身）
+            xmppConnection.sendStanza(presence);
+        } catch (Exception e) {
+            Logger.e(e);
+        }
     }
 
     /**
@@ -210,6 +245,7 @@ public class XMPPHelper {
         vCard.setEmailWork(user.getEmail());
         vCard.setJabberId(user.getAccount());
         vCard.setField("sex", String.valueOf(user.getSex()));
+        vCard.setField("sign", user.getSign());
         VCardManager.getInstanceFor(xmppConnection).saveVCard(vCard);
     }
 
@@ -335,7 +371,8 @@ public class XMPPHelper {
             }
             Collection<RosterEntry> entries = roster.getEntries();
             for (RosterEntry entry : entries) {
-                if ("none".equals(entry.getType().name())) {//none表示两者并没有成功添加好友
+                Logger.i(entry.toString());
+                if ("none".equals(entry.getType().name())) {//none表示两者并没有互相订阅
                     continue;
                 }
                 User user = new User();
@@ -394,6 +431,7 @@ public class XMPPHelper {
             user.setNickName(vCard.getNickName());
             user.setAccount(account);
             user.setEmail(vCard.getEmailWork());
+            user.setSign(vCard.getField("sign"));
             user.setAvatar(getUserAvatar(account));
             String sex = vCard.getField("sex");
             if (!TextUtils.isEmpty(sex)) {
@@ -442,19 +480,17 @@ public class XMPPHelper {
  * @param body    消息
  * @throws Exception
  */
-//    public void sendUserMsg(Message.Type type, String subject,
-//                            String user, String body) throws Exception {
-//        if (chatManager == null) {
-//            chatManager = ChatManager.getInstanceFor(xmppConnection);
-//            chatManager.addIncomingListener(incomingListener);
-//        }
-//        EntityBareJid groupJid = JidCreate.entityBareFrom(user);
-//        Chat chat = chatManager.chatWith(groupJid);
-//        Message msg = new Message();
-//        msg.setType(type);
-//        msg.setSubject(subject);
-//        msg.setBody(body);
-//        chat.send(msg);
-//    }
+    public void sendUserMsg(Message.Type type, String subject,
+                            String user, String body) throws Exception {
+
+        ChatManager chatManager = ChatManager.getInstanceFor(xmppConnection);
+        EntityBareJid targetUser = JidCreate.entityBareFrom(user);
+        Chat chat = chatManager.chatWith(targetUser);
+        Message msg = new Message();
+        msg.setType(type);
+        msg.setSubject(subject);
+        msg.setBody(body);
+        chat.send(msg);
+    }
 
 }

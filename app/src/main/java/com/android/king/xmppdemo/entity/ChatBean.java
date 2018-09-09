@@ -11,20 +11,21 @@ import java.io.Serializable;
  */
 public class ChatBean implements Serializable{
 
+    private int id;
     private String from;
     private long time;
     private String avatar;
     private String message;
+    private String msgDb;
     private int unreadCount;
     private int type;
 
-
-    public String getUser() {
-        return from;
+    public int getId() {
+        return id;
     }
 
-    public void setUser(String user) {
-        this.from = user;
+    public void setId(int id) {
+        this.id = id;
     }
 
     public long getTime() {
@@ -65,6 +66,14 @@ public class ChatBean implements Serializable{
 
     public void setFrom(String from) {
         this.from = from;
+    }
+
+    public String getMsgDb() {
+        return msgDb;
+    }
+
+    public void setMsgDb(String msgDb) {
+        this.msgDb = msgDb;
     }
 
     public int getType() {

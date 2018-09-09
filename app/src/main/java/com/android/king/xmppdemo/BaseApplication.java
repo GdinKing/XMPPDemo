@@ -31,8 +31,8 @@ public class BaseApplication extends Application {
         List<String> tableList = new ArrayList<>();
         tableList.add(AppConstants.CREATE_TABLE_APPLY);
         tableList.add(AppConstants.CREATE_TABLE_CHAT);
-        tableList.add(AppConstants.CREATE_TABLE_MESSAGE);
-        SQLiteHelper.init(tableList);
+        tableList.add(AppConstants.CREATE_TABLE_FRIEND);
+        SQLiteHelper.init(this, tableList);
 
     }
 }
