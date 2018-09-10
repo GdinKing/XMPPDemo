@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/tv_moment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:drawableLeft="@drawable/ic_moment"
+        android:drawablePadding="10dp"
+        android:gravity="center_vertical"
+        android:padding="12dp"
+        android:background="@drawable/selector_white_gray"
+        android:layout_marginTop="20dp"
+        android:text="朋友圈"
+        android:textColor="@color/black"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/tv_scan"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:drawableLeft="@drawable/ic_scan_purple"
+        android:drawablePadding="10dp"
+        android:gravity="center_vertical"
+        android:padding="12dp"
+        android:background="@drawable/selector_white_gray"
+        android:layout_marginTop="10dp"
+        android:text="扫一扫"
+        android:textColor="@color/black"
+        android:textSize="16sp" />
+
+
+    <TextView
+        android:id="@+id/tv_nearby"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:drawableLeft="@drawable/ic_nearby"
+        android:drawablePadding="10dp"
+        android:gravity="center_vertical"
+        android:padding="12dp"
+        android:background="@drawable/selector_white_gray"
+        android:layout_marginTop="10dp"
+        android:text="附近的人"
+        android:textColor="@color/black"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/tv_news"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:drawableLeft="@drawable/ic_news"
+        android:drawablePadding="10dp"
+        android:gravity="center_vertical"
+        android:padding="12dp"
+        android:background="@drawable/selector_white_gray"
+        android:layout_marginTop="10dp"
+        android:text="资讯"
+        android:textColor="@color/black"
+        android:textSize="16sp" />
+</LinearLayout>

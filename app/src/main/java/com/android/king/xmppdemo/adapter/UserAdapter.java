@@ -1,16 +1,15 @@
 package com.android.king.xmppdemo.adapter;
 
 import android.content.Context;
-import android.king.xmppdemo.R;
-
-import com.android.king.xmppdemo.entity.User;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.android.king.xmppdemo.R;
+import com.android.king.xmppdemo.entity.User;
 
 import java.util.List;
 
@@ -58,7 +57,6 @@ public class UserAdapter extends BaseAdapter {
         ViewHolder holder = null;
         if (convertView == null) {
             convertView = LayoutInflater.from(mContext).inflate(R.layout.item_search_user, null);
-
             holder = new ViewHolder();
             holder.init(convertView);
             convertView.setTag(holder);
@@ -67,15 +65,14 @@ public class UserAdapter extends BaseAdapter {
         }
 
         User user = dataList.get(position);
-
         holder.tvName.setText(user.getName());
         holder.tvAccount.setText("账号：" + user.getAccount());
         if (user.getAvatar() != null) {
             holder.ivAvatar.setImageBitmap(user.getAvatar());
         } else {
-            holder.ivAvatar.setImageResource(R.mipmap.ic_launcher);
+            holder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
         }
-        return null;
+        return convertView;
     }
 
     public void refreshData(List<User> beanList) {

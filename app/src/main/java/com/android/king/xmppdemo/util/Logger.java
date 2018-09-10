@@ -1,7 +1,8 @@
 package com.android.king.xmppdemo.util;
 
-import android.king.xmppdemo.BuildConfig;
 import android.util.Log;
+
+import com.android.king.xmppdemo.BuildConfig;
 
 /***
  * 名称：

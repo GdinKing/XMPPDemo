@@ -1,20 +1,91 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
     android:orientation="vertical">
 
+    <RelativeLayout
+        android:id="@+id/rl_new_friend"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:clickable="true"
+        android:background="@drawable/selector_white_gray"
+        android:padding="10dp">
+
+        <ImageView
+            android:id="@+id/iv_left"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_add_user"
+            android:padding="8dp"
+            android:background="@color/blue"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_centerVertical="true"
+            android:layout_toRightOf="@id/iv_left"
+            android:ellipsize="end"
+            android:maxLength="12"
+            android:maxLines="1"
+            android:text="新的朋友"
+            android:textColor="@color/black"
+            android:textSize="18sp" />
+
+    </RelativeLayout>
+    <RelativeLayout
+        android:id="@+id/rl_multi_chat"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="1dp"
+        android:clickable="true"
+        android:background="@drawable/selector_white_gray"
+        android:padding="10dp">
+
+        <ImageView
+            android:id="@+id/iv_left1"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_multi_people"
+            android:padding="8dp"
+            android:background="@color/green" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_centerVertical="true"
+            android:layout_toRightOf="@id/iv_left1"
+            android:ellipsize="end"
+            android:maxLength="12"
+            android:maxLines="1"
+            android:text="群聊"
+            android:textColor="@color/black"
+            android:textSize="18sp" />
+
+    </RelativeLayout>
     <ListView
         android:id="@+id/lv_friends"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"></ListView>
+        android:layout_height="match_parent"
+        android:background="@color/white"
+        android:layout_marginTop="20dp"></ListView>
 
     <TextView
         android:id="@+id/tv_empty"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:visibility="gone"
+        android:layout_marginTop="30dp"
         android:layout_centerInParent="true"
+        android:visibility="gone"
         android:text="暂无联系人" />
-</RelativeLayout>
+</LinearLayout>

@@ -24,7 +24,7 @@ public class WelcomeActivity extends AppCompatActivity {
 //                startActivity(new Intent(this, MainActivity.class));
 //            }else{
 //                final String account = SPUtil.getString(this,AppConstants.SP_KEY_LOGIN_ACCOUNT);
-//                final String password = SPUtil.getString(this,AppConstants.SP_KEY_LOGIN_PASSWOrD);
+//                final String password = SPUtil.getString(this,AppConstants.SP_KEY_LOGIN_PASSWORD);
 //                NetworkExecutor.getInstance().execute(new OnNetworkExecuteListener() {
 //                    @Override
 //                    public void onExecute() throws Exception {

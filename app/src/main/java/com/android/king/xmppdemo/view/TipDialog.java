@@ -3,17 +3,18 @@ package com.android.king.xmppdemo.view;
 import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Color;
-import android.king.xmppdemo.R;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.TextView;
 
+import com.android.king.xmppdemo.R;
+import com.android.king.xmppdemo.util.DisplayUtil;
+
 /***
- * 名称：
- * 描述：
- * 最近修改时间：2018年09月07日 10:00分
+ * 提示对话框
  * @since 2018-09-07
  * @author king
  */
@@ -60,7 +61,7 @@ public class TipDialog extends Dialog {
             @Override
             public void onClick(View v) {
                 if (tipClickListener != null) {
-                    tipClickListener.onPositiveClick();
+                    tipClickListener.onNegativeClick();
                 }
             }
         });
@@ -90,6 +91,9 @@ public class TipDialog extends Dialog {
     public void show() {
         super.show();
         getWindow().setWindowAnimations(R.style.TipDialogAnim); //设置窗口弹出动画
+        WindowManager.LayoutParams lp = getWindow().getAttributes();
+        lp.width = (int) (DisplayUtil.getScreenWidth(getContext()) * 0.9f); //设置宽度
+        getWindow().setAttributes(lp);
     }
 
     public void setOnTipClickListener(OnTipClickListener listener) {

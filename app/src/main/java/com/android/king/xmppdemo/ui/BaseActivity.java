@@ -1,14 +1,14 @@
 package com.android.king.xmppdemo.ui;
 
 import android.app.ProgressDialog;
-import android.king.xmppdemo.R;
-
-import com.android.king.xmppdemo.listener.OnBackClickListener;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.android.king.xmppdemo.R;
+import com.android.king.xmppdemo.listener.OnBackClickListener;
 
 import me.yokeyword.fragmentation.SupportActivity;
 

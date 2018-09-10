@@ -1,9 +1,7 @@
 package com.android.king.xmppdemo.fragment;
 
 import android.app.ProgressDialog;
-import android.king.xmppdemo.R;
-import com.android.king.xmppdemo.listener.OnBackClickListener;
-import com.android.king.xmppdemo.view.TipDialog;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -13,6 +11,16 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.android.king.xmppdemo.R;
+import com.android.king.xmppdemo.config.AppConstants;
+import com.android.king.xmppdemo.listener.OnBackClickListener;
+import com.android.king.xmppdemo.listener.OnTipDialogListener;
+import com.android.king.xmppdemo.util.SPUtil;
+import com.mylhyl.circledialog.CircleDialog;
+import com.mylhyl.circledialog.callback.ConfigTitle;
+import com.mylhyl.circledialog.params.TitleParams;
+import com.mylhyl.circledialog.res.values.CircleDimen;
 
 import me.yokeyword.fragmentation.SupportFragment;
 
@@ -27,16 +35,10 @@ public abstract class BaseFragment extends SupportFragment {
 
     protected View rootView;
     protected ProgressDialog progressDialog;
-    protected TipDialog tipDialog;
-
     protected ImageView ivBack;
     protected TextView tvTitle;
     protected OnBackClickListener backClickListener;
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
 
     @Nullable
     @Override
@@ -46,6 +48,10 @@ public abstract class BaseFragment extends SupportFragment {
         initView();
         initData();
         return rootView;
+    }
+
+    protected String getCurrentLogin(){
+        return SPUtil.getString(getActivity(), AppConstants.SP_KEY_LOGIN_ACCOUNT);
     }
 
     protected void initTitle() {
@@ -100,43 +106,51 @@ public abstract class BaseFragment extends SupportFragment {
         Toast.makeText(getActivity(), msg, Toast.LENGTH_SHORT).show();
     }
 
-    protected void showTip(String msg) {
-        if (tipDialog == null) {
-            tipDialog = new TipDialog(getActivity());
-            tipDialog.setTipMessage(msg);
-            tipDialog.enableNegative(false);
-        }
-        tipDialog.setOnTipClickListener(new TipDialog.OnTipClickListener() {
-            @Override
-            public void onPositiveClick() {
-                tipDialog.dismiss();
-            }
 
-            @Override
-            public void onNegativeClick() {
-                tipDialog.dismiss();
-            }
-        });
-        if (!tipDialog.isShowing()) {
-            tipDialog.show();
-        }
+    protected void showTip(String msg, final OnTipDialogListener listener) {
+        new CircleDialog.Builder(getActivity())
+                .setTitle("提示")
+                .setTitleColor(Color.BLACK)
+                .configTitle(new ConfigTitle() {
+                    @Override
+                    public void onConfig(TitleParams params) {
+                        params.textSize = CircleDimen.SUBTITLE_TEXT_SIZE;
+                    }
+                })
+                .setText(msg)
+                .setCanceledOnTouchOutside(false)
+                .setCancelable(false)
+                .setPositive("确定", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (listener != null) {
+                            listener.onPositiveClick();
+                        }
+                    }
+                })
+                .setNegative("取消", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (listener != null) {
+                            listener.onNegativeClick();
+                        }
+                    }
+                }).show();
     }
 
-    protected void showTip(String msg, TipDialog.OnTipClickListener listener) {
-        if (tipDialog == null) {
-            tipDialog = new TipDialog(getActivity());
-            tipDialog.setTipMessage(msg);
-        }
-        tipDialog.setOnTipClickListener(listener);
-        if (!tipDialog.isShowing()) {
-            tipDialog.show();
-        }
-    }
-
-    protected void hideTip() {
-        if (tipDialog != null && !tipDialog.isShowing()) {
-            tipDialog.dismiss();
-        }
+    protected void showSimpleTip(String msg) {
+        new CircleDialog.Builder(getActivity())
+                .setTitle("提示")
+                .setTitleColor(Color.BLACK)
+                .configTitle(new ConfigTitle() {
+                    @Override
+                    public void onConfig(TitleParams params) {
+                        params.textSize = CircleDimen.SUBTITLE_TEXT_SIZE;
+                    }
+                })
+                .setText(msg)
+                .setCanceledOnTouchOutside(false)
+                .setNegative("确定", null).show();
     }
 
     protected abstract int getContentView();
@@ -144,4 +158,5 @@ public abstract class BaseFragment extends SupportFragment {
     protected abstract void initView();
 
     protected abstract void initData();
+
 }

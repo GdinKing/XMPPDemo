@@ -51,7 +51,7 @@
         android:layout_width="match_parent"
         android:layout_height="1px"
         android:background="@color/text_gray"/>
-    <RadioGroup
+    <LinearLayout
         android:id="@+id/rg_bottom"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -59,8 +59,8 @@
         android:layout_marginTop="5dp"
         android:orientation="horizontal">
 
-        <RadioButton
-            android:id="@+id/rb_chat"
+        <TextView
+            android:id="@+id/tv_message"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -72,8 +72,8 @@
             android:textColor="@color/home_select_color"
             android:text="微聊" />
 
-        <RadioButton
-            android:id="@+id/rb_friends"
+        <TextView
+            android:id="@+id/tv_friends"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -84,8 +84,8 @@
             android:textColor="@color/home_select_color"
             android:text="通讯录" />
 
-        <RadioButton
-            android:id="@+id/rb_moment"
+        <TextView
+            android:id="@+id/tv_find"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -96,8 +96,8 @@
             android:textSize="12sp"
             android:text="发现" />
 
-        <RadioButton
-            android:id="@+id/rb_my"
+        <TextView
+            android:id="@+id/tv_my"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -107,5 +107,5 @@
             android:gravity="center"
             android:textColor="@color/home_select_color"
             android:text="我" />
-    </RadioGroup>
+    </LinearLayout>
 </LinearLayout>

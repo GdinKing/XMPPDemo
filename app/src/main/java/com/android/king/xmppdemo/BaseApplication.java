@@ -1,7 +1,12 @@
 package com.android.king.xmppdemo;
 
 import android.app.Application;
-import android.king.xmppdemo.BuildConfig;
+
+import com.android.king.xmppdemo.config.AppConstants;
+import com.android.king.xmppdemo.db.SQLiteHelper;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import me.yokeyword.fragmentation.Fragmentation;
 
@@ -21,5 +26,13 @@ public class BaseApplication extends Application {
                 .stackViewMode(Fragmentation.NONE)
                 .debug(BuildConfig.DEBUG)
                 .install();
+
+        //初始化数据库
+        List<String> tableList = new ArrayList<>();
+        tableList.add(AppConstants.CREATE_TABLE_APPLY);
+        tableList.add(AppConstants.CREATE_TABLE_CHAT);
+        tableList.add(AppConstants.CREATE_TABLE_FRIEND);
+        SQLiteHelper.init(this, tableList);
+
     }
 }
