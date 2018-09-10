@@ -123,10 +123,13 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
                         break;
                     case 1:
                         Toast.makeText(getActivity(), "删除" + bean.getTarget(), Toast.LENGTH_SHORT).show();
+                        SQLiteHelper.getInstance(getActivity()).delete(AppConstants.TABLE_CHAT, "fromUser=?", new String[]{bean.getTarget()});
+                        getActivity().deleteDatabase(bean.getMsgDb());
                         dataList.remove(position);
                         break;
                 }
                 chatAdapter.refreshData(dataList);
+                ((HomeFragment) getParentFragment()).setMessageBadge(chatAdapter.getTotalUnread());
                 return false;
             }
         });
@@ -146,7 +149,7 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
                     String message = cursor.getString(cursor.getColumnIndex("message"));
                     String msgDb = cursor.getString(cursor.getColumnIndex("msgDb"));
                     long time = cursor.getLong(cursor.getColumnIndex("time"));
-                    Logger.i("目标："+from);
+                    Logger.i("目标：" + from);
                     ChatBean bean = new ChatBean();
                     bean.setId(id);
                     bean.setType(type);
@@ -167,6 +170,7 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
                     return;
                 }
                 chatAdapter.refreshData(dataList);
+                ((HomeFragment) getParentFragment()).setMessageBadge(chatAdapter.getTotalUnread());
             }
         });
     }
@@ -185,15 +189,19 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
         long time = chatBean.getTime();
         int index = chatAdapter.isExist(target);
         if (index < 0) {
+            chatBean.setUnreadCount(1);
             dataList.add(chatBean);
             insertChatDb(chatBean);
         } else {
             dataList.get(index).setMessage(message);
             dataList.get(index).setTime(time);
+            dataList.get(index).setUnreadCount(dataList.get(index).getUnreadCount() + 1);
             updateChatDb(chatBean);
+
         }
         insertMsgDb(chatBean);
         chatAdapter.refreshData(dataList);
+        ((HomeFragment) getParentFragment()).setMessageBadge(chatAdapter.getTotalUnread());
     }
 
     /**
@@ -307,7 +315,6 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
                 }
                 unreadCount += 1;
                 ContentValues cv = new ContentValues();
-                cv.put("fromUser", from);
                 cv.put("message", message);
                 cv.put("unread", unreadCount);
                 cv.put("time", time);
@@ -324,13 +331,31 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
                 }
             }
         });
-
     }
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         ChatBean bean = dataList.get(position);
-
+        resetUnreadCount(bean.getTarget());
         ((HomeFragment) getParentFragment()).startFragment(MessageFragment.newInstance(bean.getTarget(), bean.getMsgDb(), bean.getType()));
+    }
+
+    /**
+     * 清除未读数
+     *
+     * @param from
+     */
+    private void resetUnreadCount(String from) {
+        try {
+            ContentValues cv = new ContentValues();
+            cv.put("unread", 0);
+            SQLiteHelper.getInstance(getActivity()).update(AppConstants.TABLE_CHAT, cv, "fromUser=?", new String[]{from});
+            int index = chatAdapter.isExist(from);
+            dataList.get(index).setUnreadCount(0);
+            chatAdapter.refreshData(dataList);
+            ((HomeFragment) getParentFragment()).setMessageBadge(chatAdapter.getTotalUnread());
+        } catch (Exception e) {
+            Logger.e(e);
+        }
     }
 }

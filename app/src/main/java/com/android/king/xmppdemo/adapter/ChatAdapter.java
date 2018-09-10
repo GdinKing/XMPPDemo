@@ -11,6 +11,7 @@ import android.widget.TextView;
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.entity.ChatBean;
 import com.android.king.xmppdemo.util.CommonUtil;
+import com.owater.library.CircleTextView;
 
 import java.util.List;
 
@@ -72,6 +73,12 @@ public class ChatAdapter extends BaseAdapter {
         holder.tvMessage.setText(chatBean.getMessage());
         holder.tvTime.setText(CommonUtil.formatTime(chatBean.getTime()));
         holder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
+        holder.badgeView.setText(chatBean.getUnreadCount() > 99 ? "99+" : String.valueOf(chatBean.getUnreadCount()));
+        if (chatBean.getUnreadCount() > 0) {
+            holder.badgeView.setVisibility(View.VISIBLE);
+        } else {
+            holder.badgeView.setVisibility(View.GONE);
+        }
 
         return convertView;
     }
@@ -100,12 +107,25 @@ public class ChatAdapter extends BaseAdapter {
         return -1;
     }
 
+    /**
+     * 获取所有未读数
+     * @return
+     */
+    public int getTotalUnread() {
+        int result = 0;
+        for (ChatBean bean : dataList) {
+            result += bean.getUnreadCount();
+        }
+        return result;
+    }
 
-    static class ViewHolder {
+
+    class ViewHolder {
         TextView tvName;
         TextView tvMessage;
         TextView tvTime;
         ImageView ivAvatar;
+        CircleTextView badgeView;
 
 
         public void init(View v) {
@@ -113,6 +133,7 @@ public class ChatAdapter extends BaseAdapter {
             tvMessage = v.findViewById(R.id.tv_message);
             tvTime = v.findViewById(R.id.tv_time);
             ivAvatar = v.findViewById(R.id.iv_avatar);
+            badgeView = v.findViewById(R.id.bv_count);
         }
     }
 }

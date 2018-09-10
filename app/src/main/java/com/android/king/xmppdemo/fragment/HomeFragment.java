@@ -292,9 +292,11 @@ public class HomeFragment extends SupportFragment implements View.OnClickListene
     private QBadgeView friendBadge;
     private QBadgeView messageBadge;
 
-    public void addFriendBadge(int count) {
+    public void setFriendBadge(int count) {
 
-        hideFriendBadge();
+        if (friendBadge != null) {
+            friendBadge.hide(false);
+        }
         if (count <= 0) {
             return;
         }
@@ -305,14 +307,11 @@ public class HomeFragment extends SupportFragment implements View.OnClickListene
                 .setBadgeNumber(count);
     }
 
-    public void hideFriendBadge() {
-        if (friendBadge != null) {
-            friendBadge.hide(false);
-        }
-    }
 
-    public void addMessageBadge(int count) {
-        hideMessageBadge();
+    public void setMessageBadge(int count) {
+        if (messageBadge != null) {
+            messageBadge.hide(false);
+        }
         if (count <= 0) {
             return;
         }
@@ -322,12 +321,5 @@ public class HomeFragment extends SupportFragment implements View.OnClickListene
                 .setGravityOffset(10, 0, true)
                 .setBadgeNumber(count);
     }
-
-    public void hideMessageBadge() {
-        if (messageBadge != null) {
-            messageBadge.hide(false);
-        }
-    }
-
 
 }

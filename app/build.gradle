@@ -38,4 +38,6 @@ dependencies {
     implementation 'com.mylhyl:circleDialog:2.6.6'   //各种iOS样式的对话框
 
     implementation project(':emojiLibrary')  //emoji
+
+    implementation 'com.owater.library:CircleTextViewlibrary:0.8.3'
 }

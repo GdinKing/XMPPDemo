@@ -23,7 +23,6 @@ import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.jivesoftware.smackx.iqregister.AccountManager;
 import org.jivesoftware.smackx.receipts.DeliveryReceipt;
-import org.jivesoftware.smackx.receipts.DeliveryReceiptManager;
 import org.jivesoftware.smackx.receipts.DeliveryReceiptRequest;
 import org.jivesoftware.smackx.search.UserSearch;
 import org.jivesoftware.smackx.vcardtemp.VCardManager;
@@ -114,16 +113,13 @@ public class XMPPHelper {
             builder.setCompressionEnabled(true);
             builder.setSecurityMode(XMPPTCPConnectionConfiguration.SecurityMode.disabled);
             builder.setDebuggerEnabled(false);
-
-            // 自动回复回执方法，如果对方的消息要求回执。
-            ProviderManager.addExtensionProvider(DeliveryReceipt.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceipt.Provider());
-            ProviderManager.addExtensionProvider(DeliveryReceiptRequest.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceiptRequest.Provider());
-            DeliveryReceiptManager.getInstanceFor(xmppConnection).autoAddDeliveryReceiptRequests();
-
             //允许别人添加好友
             Roster.setDefaultSubscriptionMode(Roster.SubscriptionMode.manual);
             ProviderManager.addIQProvider("vCard", "vcard-temp", new VCardProvider());
             ProviderManager.addIQProvider("query", "jabber:iq:search", new UserSearch.Provider());
+
+            ProviderManager.addExtensionProvider(DeliveryReceipt.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceipt.Provider());
+            ProviderManager.addExtensionProvider(DeliveryReceiptRequest.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceiptRequest.Provider());
 
             XMPPTCPConnectionConfiguration config = builder.build();
             conn = new XMPPTCPConnection(config);
