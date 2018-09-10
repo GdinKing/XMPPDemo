@@ -68,7 +68,7 @@ public class ChatAdapter extends BaseAdapter {
 
         ChatBean chatBean = dataList.get(position);
 
-        holder.tvName.setText(chatBean.getFrom().split("@")[0]);
+        holder.tvName.setText(chatBean.getTarget().split("@")[0]);
         holder.tvMessage.setText(chatBean.getMessage());
         holder.tvTime.setText(CommonUtil.formatTime(chatBean.getTime()));
         holder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
@@ -93,7 +93,7 @@ public class ChatAdapter extends BaseAdapter {
         }
         for (int i = 0; i < dataList.size(); i++) {
             ChatBean bean = dataList.get(i);
-            if (bean.getFrom().equals(user)) {
+            if (bean.getTarget().equals(user)) {
                 return i;
             }
         }

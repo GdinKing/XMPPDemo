@@ -20,8 +20,6 @@
         android:listSelector="@color/background"
         android:cacheColorHint="@color/background"
         android:divider="@null"
-        android:paddingTop="10dp"
-        android:paddingBottom="15dp"
         android:layout_above="@+id/bottom"/>
 
 
@@ -34,7 +32,7 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="50dp"
             android:background="@color/white"
             android:orientation="horizontal">
 
@@ -89,7 +87,7 @@
             android:id="@+id/emojicons"
             class="io.github.rockerhieu.emojicon.EmojiconGridFragment"
             android:layout_width="match_parent"
-            android:layout_height="220dp"
+            android:layout_height="wrap_content"
             android:paddingTop="5dp"/>
     </LinearLayout>
 

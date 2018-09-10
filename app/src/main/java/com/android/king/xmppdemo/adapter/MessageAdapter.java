@@ -1,6 +1,7 @@
 package com.android.king.xmppdemo.adapter;
 
 import android.content.Context;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,7 @@ import com.android.king.xmppdemo.util.CommonUtil;
 import java.util.List;
 
 import io.github.rockerhieu.emojicon.EmojiconTextView;
+import q.rorbin.badgeview.QBadgeView;
 
 /***
  * 名称：
@@ -35,6 +37,7 @@ public class MessageAdapter extends BaseAdapter {
     private Context mContext;
     private LayoutInflater mInflater;
     private long initTime;
+    private OnResendLitener listener;
 
 
     public MessageAdapter(Context mContext, List<MessageBean> dataList) {
@@ -142,7 +145,7 @@ public class MessageAdapter extends BaseAdapter {
         }
         MessageBean bean = dataList.get(position);
         setInText(inTextHolder, bean);
-        setOutText(outTextHolder, bean);
+        setOutText(outTextHolder, bean, position);
         setIntImage(inImageHolder, bean);
         setOutImage(outImageHolder, bean);
         return convertView;
@@ -151,6 +154,8 @@ public class MessageAdapter extends BaseAdapter {
     public void refreshData(List<MessageBean> beanList) {
         this.dataList = beanList;
         notifyDataSetChanged();
+
+        initTime = System.currentTimeMillis();
     }
 
     /**
@@ -181,16 +186,15 @@ public class MessageAdapter extends BaseAdapter {
         } else {
             inTextHolder.tvTime.setVisibility(View.GONE);
         }
-        inTextHolder.tvName.setVisibility(bean.getType() == AppConstants.ChatType.SINGLE?View.GONE:View.VISIBLE);
+        inTextHolder.tvName.setVisibility(bean.getType() == AppConstants.ChatType.SINGLE ? View.GONE : View.VISIBLE);
         inTextHolder.tvName.setText(bean.getFrom());
         inTextHolder.tvMessage.setText(bean.getContent());
         inTextHolder.tvTime.setText(CommonUtil.formatMsgTime(bean.getTime()));
         inTextHolder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
-
-        initTime = System.currentTimeMillis();
+        initTime = bean.getTime();
     }
 
-    private void setOutText(OutTextHolder outTextHolder, MessageBean bean) {
+    private void setOutText(OutTextHolder outTextHolder, MessageBean bean, final int position) {
         if (outTextHolder == null) {
             return;
         }
@@ -199,13 +203,26 @@ public class MessageAdapter extends BaseAdapter {
         } else {
             outTextHolder.tvTime.setVisibility(View.GONE);
         }
-        outTextHolder.tvName.setVisibility(bean.getType() == AppConstants.ChatType.SINGLE?View.GONE:View.VISIBLE);
+        if (bean.getStatus() == AppConstants.MessageStatus.ERROR) {
+            outTextHolder.ivError.setVisibility(View.VISIBLE);
+        } else {
+            outTextHolder.ivError.setVisibility(View.GONE);
+        }
+        outTextHolder.tvName.setVisibility(bean.getType() == AppConstants.ChatType.SINGLE ? View.GONE : View.VISIBLE);
         outTextHolder.tvName.setText(bean.getFrom());
         outTextHolder.tvMessage.setText(bean.getContent());
         outTextHolder.tvTime.setText(CommonUtil.formatMsgTime(bean.getTime()));
         outTextHolder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
 
-        initTime = System.currentTimeMillis();
+        outTextHolder.ivError.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (listener != null) {
+                    listener.onResend(position);
+                }
+            }
+        });
+        initTime = bean.getTime();
     }
 
     private void setIntImage(InImageHolder inImageHolder, MessageBean bean) {
@@ -217,13 +234,12 @@ public class MessageAdapter extends BaseAdapter {
         } else {
             inImageHolder.tvTime.setVisibility(View.GONE);
         }
-        inImageHolder.tvName.setVisibility(bean.getType() == AppConstants.ChatType.SINGLE?View.GONE:View.VISIBLE);
+        inImageHolder.tvName.setVisibility(bean.getType() == AppConstants.ChatType.SINGLE ? View.GONE : View.VISIBLE);
         inImageHolder.tvName.setText(bean.getFrom());
         inImageHolder.ivImage.setImageResource(R.drawable.ic_default_avatar);
         inImageHolder.tvTime.setText(CommonUtil.formatMsgTime(bean.getTime()));
         inImageHolder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
 
-        initTime = System.currentTimeMillis();
     }
 
     private void setOutImage(OutImageHolder outImageHolder, MessageBean bean) {
@@ -235,13 +251,12 @@ public class MessageAdapter extends BaseAdapter {
         } else {
             outImageHolder.tvTime.setVisibility(View.GONE);
         }
-        outImageHolder.tvName.setVisibility(bean.getType() == AppConstants.ChatType.SINGLE?View.GONE:View.VISIBLE);
+        outImageHolder.tvName.setVisibility(bean.getType() == AppConstants.ChatType.SINGLE ? View.GONE : View.VISIBLE);
         outImageHolder.tvName.setText(bean.getFrom());
         outImageHolder.ivImage.setImageResource(R.drawable.ic_default_avatar);
         outImageHolder.tvTime.setText(CommonUtil.formatMsgTime(bean.getTime()));
         outImageHolder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
 
-        initTime = System.currentTimeMillis();
     }
 
 
@@ -265,6 +280,7 @@ public class MessageAdapter extends BaseAdapter {
         EmojiconTextView tvMessage;
         TextView tvTime;
         ImageView ivAvatar;
+        ImageView ivError;
 
 
         public void init(View v) {
@@ -272,6 +288,7 @@ public class MessageAdapter extends BaseAdapter {
             tvMessage = v.findViewById(R.id.tv_message);
             tvTime = v.findViewById(R.id.tv_time);
             ivAvatar = v.findViewById(R.id.iv_avatar);
+            ivError = v.findViewById(R.id.iv_error);
         }
     }
 
@@ -303,5 +320,13 @@ public class MessageAdapter extends BaseAdapter {
             tvTime = v.findViewById(R.id.tv_time);
             ivAvatar = v.findViewById(R.id.iv_avatar);
         }
+    }
+
+    public void setOnResendListener(OnResendLitener listener) {
+        this.listener = listener;
+    }
+
+    interface OnResendLitener {
+        void onResend(int position);
     }
 }

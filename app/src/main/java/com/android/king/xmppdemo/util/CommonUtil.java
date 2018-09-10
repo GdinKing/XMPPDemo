@@ -56,14 +56,14 @@ public class CommonUtil {
 
         Calendar current = Calendar.getInstance();
         int currentYear = current.get(Calendar.YEAR);
-        int currentMonth = current.get(Calendar.MONTH);
+        int currentMonth = current.get(Calendar.MONTH) + 1;
         int currentDay = current.get(Calendar.DAY_OF_MONTH);
         Calendar c = Calendar.getInstance();
         c.setTimeInMillis(time);
         int year = c.get(Calendar.YEAR);
         int month = c.get(Calendar.MONTH) + 1;
         int day = c.get(Calendar.DAY_OF_MONTH);
-        int hour = c.get(Calendar.HOUR);
+        int hour = c.get(Calendar.HOUR_OF_DAY);
         int minute = c.get(Calendar.MINUTE);
 
         if (currentYear == year && currentMonth == month) {

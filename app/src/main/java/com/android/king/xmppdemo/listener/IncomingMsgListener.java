@@ -26,7 +26,7 @@ public class IncomingMsgListener implements IncomingChatMessageListener {
             return;
         }
         ChatBean bean = new ChatBean();
-        bean.setFrom(from.toString());
+        bean.setTarget(from.toString());
         bean.setTime(System.currentTimeMillis());
         bean.setMessage(message.getBody());
         bean.setType(AppConstants.ChatType.SINGLE);

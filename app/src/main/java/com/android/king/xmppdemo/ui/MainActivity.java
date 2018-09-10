@@ -5,6 +5,7 @@ import android.os.Bundle;
 
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.fragment.HomeFragment;
+import com.android.king.xmppdemo.xmpp.XMPPHelper;
 import com.android.king.xmppdemo.xmpp.XMPPService;
 
 import me.yokeyword.fragmentation.SupportActivity;
@@ -33,10 +34,6 @@ public class MainActivity extends SupportActivity {
 
     }
 
-
-
-
-
     @Override
     public void onBackPressedSupport() {
         // 对于 4个类别的主Fragment内的回退back逻辑,已经在其onBackPressedSupport里各自处理了
@@ -45,6 +42,7 @@ public class MainActivity extends SupportActivity {
 
     @Override
     protected void onDestroy() {
+        XMPPHelper.getInstance().logout();
         super.onDestroy();
     }
 }

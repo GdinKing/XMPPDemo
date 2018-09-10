@@ -21,9 +21,13 @@ import org.jivesoftware.smack.chat2.ChatManager;
 import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.StanzaFilter;
 import org.jivesoftware.smack.filter.StanzaTypeFilter;
+import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.PacketExtension;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smackx.offline.OfflineMessageManager;
+import org.jivesoftware.smackx.receipts.DeliveryReceipt;
+import org.jivesoftware.smackx.receipts.DeliveryReceiptRequest;
 
 /***
  * 名称：
@@ -111,7 +115,7 @@ public class XMPPService extends Service {
             }
         };
         connection.addConnectionListener(connectionListener);
-        addFriendListener();
+        addStanzaListener();
 
         if (incomingListener == null) {
             incomingListener = new IncomingMsgListener();
@@ -124,9 +128,9 @@ public class XMPPService extends Service {
     }
 
     /**
-     * 好友申请监听
+     * 响应回复监听
      */
-    public void addFriendListener() {
+    public void addStanzaListener() {
         //条件过滤
         StanzaFilter filter = new AndFilter(new StanzaTypeFilter(Presence.class));
         StanzaListener listener = new StanzaListener() {
@@ -144,6 +148,7 @@ public class XMPPService extends Service {
 
         };
         connection.addAsyncStanzaListener(listener, filter);
+
     }
 
 //    private void reconnect() {
@@ -170,12 +175,4 @@ public class XMPPService extends Service {
 //    }
 
 
-    @Override
-    public void onDestroy() {
-        if (connectionListener != null && connection != null) {
-            connection.removeConnectionListener(connectionListener);
-        }
-        XMPPHelper.getInstance().logout();
-        super.onDestroy();
-    }
 }

@@ -25,6 +25,11 @@ public class AppConstants {
         public static final int MULTI = 1;  //群聊
     }
 
+    public static class MessageStatus {
+        public static final int SUCCESS = 0;  //成功
+        public static final int ERROR = 1;  //失败
+    }
+
     public static class MessageType {
         public static final int IN_TEXT = 0;  //对方文字
         public static final int OUT_TEXT = 1;  //我的文字
@@ -48,15 +53,18 @@ public class AppConstants {
     /**
      * 消息表
      * type:0-文字  1-图片 2-语音  3-视频
-     * category: 0-对方的 1-我的
+     * category: 参考上面MessageType
+     * status：0发送成功  1未发送
      */
     public static final String CREATE_TABLE_MESSAGE =
             "CREATE TABLE IF NOT EXISTS " + TABLE_MESSAGE + "(" +
                     "id INTEGER PRIMARY KEY autoincrement," +
                     "fromUser TEXT NOT NULL," +
+                    "toUser TEXT NOT NULL," +
                     "content TEXT," +
                     "type INTEGER NOT NULL," +
                     "category INTEGER NOT NULL," +
+                    "status INTEGER NOT NULL," +
                     "time LONG" +
                     ")";
 

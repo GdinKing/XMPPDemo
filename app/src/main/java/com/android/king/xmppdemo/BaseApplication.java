@@ -35,4 +35,5 @@ public class BaseApplication extends Application {
         SQLiteHelper.init(this, tableList);
 
     }
+
 }

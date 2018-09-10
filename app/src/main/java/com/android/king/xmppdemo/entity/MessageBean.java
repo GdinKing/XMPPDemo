@@ -3,9 +3,7 @@ package com.android.king.xmppdemo.entity;
 import java.io.Serializable;
 
 /***
- * 名称：
- * 描述：
- * 最近修改时间：2018年09月04日 10:15分
+ * 消息实体
  * @since 2018-09-04
  * @author king
  */
@@ -13,10 +11,13 @@ public class MessageBean implements Serializable{
 
     private int id;
     private String from;
+    private String to;
     private long time;
     private String content;
     private int type;
     private int category;
+    private int status;
+    private String msgDb;
 
 
     public int getId() {
@@ -65,5 +66,29 @@ public class MessageBean implements Serializable{
 
     public void setCategory(int category) {
         this.category = category;
+    }
+
+    public String getTo() {
+        return to;
+    }
+
+    public void setTo(String to) {
+        this.to = to;
+    }
+
+    public String getMsgDb() {
+        return msgDb;
+    }
+
+    public void setMsgDb(String msgDb) {
+        this.msgDb = msgDb;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
     }
 }

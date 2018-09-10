@@ -17,12 +17,15 @@ import com.android.king.xmppdemo.adapter.ChatAdapter;
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.db.SQLiteHelper;
 import com.android.king.xmppdemo.entity.ChatBean;
+import com.android.king.xmppdemo.entity.MessageBean;
 import com.android.king.xmppdemo.event.ChatEvent;
 import com.android.king.xmppdemo.event.MessageEvent;
+import com.android.king.xmppdemo.event.SendMsgEvent;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
 import com.android.king.xmppdemo.util.DisplayUtil;
 import com.android.king.xmppdemo.util.Logger;
+import com.android.king.xmppdemo.util.SPUtil;
 import com.baoyz.swipemenulistview.SwipeMenu;
 import com.baoyz.swipemenulistview.SwipeMenuCreator;
 import com.baoyz.swipemenulistview.SwipeMenuItem;
@@ -39,7 +42,7 @@ import me.yokeyword.fragmentation.SupportFragment;
 
 
 /**
- *
+ * 会话列表界面
  */
 public class ChatFragment extends SupportFragment implements AdapterView.OnItemClickListener {
 
@@ -113,13 +116,13 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
                 ChatBean bean = dataList.get(position);
                 switch (index) {
                     case 0:
-                        Toast.makeText(getActivity(), "置顶" + bean.getFrom(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getActivity(), "置顶" + bean.getTarget(), Toast.LENGTH_SHORT).show();
                         dataList.add(0, dataList.get(position));
                         dataList.remove(position + 1);
 
                         break;
                     case 1:
-                        Toast.makeText(getActivity(), "删除" + bean.getFrom(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getActivity(), "删除" + bean.getTarget(), Toast.LENGTH_SHORT).show();
                         dataList.remove(position);
                         break;
                 }
@@ -143,13 +146,13 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
                     String message = cursor.getString(cursor.getColumnIndex("message"));
                     String msgDb = cursor.getString(cursor.getColumnIndex("msgDb"));
                     long time = cursor.getLong(cursor.getColumnIndex("time"));
-
+                    Logger.i("目标："+from);
                     ChatBean bean = new ChatBean();
                     bean.setId(id);
                     bean.setType(type);
                     bean.setMessage(message);
                     bean.setTime(time);
-                    bean.setFrom(from);
+                    bean.setTarget(from);
                     bean.setMsgDb(msgDb);
                     bean.setUnreadCount(unreadCount);
                     dataList.add(bean);
@@ -177,11 +180,10 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(MessageEvent event) {
         ChatBean chatBean = event.chatBean;
-        String from = chatBean.getFrom();
+        String target = chatBean.getTarget();
         String message = chatBean.getMessage();
         long time = chatBean.getTime();
-        Logger.i(message);
-        int index = chatAdapter.isExist(from);
+        int index = chatAdapter.isExist(target);
         if (index < 0) {
             dataList.add(chatBean);
             insertChatDb(chatBean);
@@ -194,11 +196,41 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
         chatAdapter.refreshData(dataList);
     }
 
+    /**
+     * 发送消息后的响应
+     *
+     * @param event
+     */
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onSendMsgEvent(SendMsgEvent event) {
+        MessageBean message = event.message;
+        String to = message.getTo();
+        String content = message.getContent();
+        long time = message.getTime();
+
+        ChatBean chatBean = new ChatBean();
+        chatBean.setTarget(to);
+        chatBean.setTime(time);
+        chatBean.setMessage(content);
+        chatBean.setMsgDb(message.getMsgDb());
+        int index = chatAdapter.isExist(to);
+        if (index < 0) {
+            dataList.add(chatBean);
+            insertChatDb(chatBean);
+        } else {
+            dataList.get(index).setMessage(content);
+            dataList.get(index).setTime(time);
+            updateChatDb(chatBean);
+        }
+        chatAdapter.refreshData(dataList);
+    }
+
+
     private void insertChatDb(final ChatBean chatBean) {
         NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
             @Override
             public Object onExecute() throws Exception {
-                String from = chatBean.getFrom();
+                String from = chatBean.getTarget();
                 String message = chatBean.getMessage();
                 long time = chatBean.getTime();
                 ContentValues cv = new ContentValues();
@@ -228,18 +260,21 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
      * @param chatBean
      */
     private void insertMsgDb(final ChatBean chatBean) {
+        final String current = SPUtil.getString(getActivity(), AppConstants.SP_KEY_LOGIN_ACCOUNT);
         NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
             @Override
             public Object onExecute() throws Exception {
-                String from = chatBean.getFrom();
+                String from = chatBean.getTarget();
                 String message = chatBean.getMessage();
                 long time = chatBean.getTime();
                 String msgDb = chatBean.getMsgDb();
                 ContentValues cv = new ContentValues();
                 cv.put("fromUser", from);
+                cv.put("toUser", current);
                 cv.put("content", message);
                 cv.put("type", AppConstants.ChatType.SINGLE);
                 cv.put("time", time);
+                cv.put("status", AppConstants.MessageStatus.SUCCESS);
                 cv.put("category", AppConstants.MessageType.IN_TEXT);
                 SQLiteHelper.getMsgInstance(getActivity(), msgDb).insert(AppConstants.TABLE_MESSAGE, cv);
                 return null;
@@ -261,7 +296,7 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
             @Override
             public Object onExecute() throws Exception {
 
-                String from = chatBean.getFrom();
+                String from = chatBean.getTarget();
                 String message = chatBean.getMessage();
                 long time = chatBean.getTime();
 
@@ -296,6 +331,6 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         ChatBean bean = dataList.get(position);
 
-        ((HomeFragment) getParentFragment()).startFragment(MessageFragment.newInstance(bean.getFrom(), bean.getMsgDb(), bean.getType()));
+        ((HomeFragment) getParentFragment()).startFragment(MessageFragment.newInstance(bean.getTarget(), bean.getMsgDb(), bean.getType()));
     }
 }

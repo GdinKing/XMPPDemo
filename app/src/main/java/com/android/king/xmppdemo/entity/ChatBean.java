@@ -3,16 +3,14 @@ package com.android.king.xmppdemo.entity;
 import java.io.Serializable;
 
 /***
- * 名称：
- * 描述：
- * 最近修改时间：2018年09月04日 10:15分
+ * 对话实体
  * @since 2018-09-04
  * @author king
  */
 public class ChatBean implements Serializable{
 
     private int id;
-    private String from;
+    private String target;
     private long time;
     private String avatar;
     private String message;
@@ -60,12 +58,12 @@ public class ChatBean implements Serializable{
         this.message = message;
     }
 
-    public String getFrom() {
-        return from;
+    public String getTarget() {
+        return target;
     }
 
-    public void setFrom(String from) {
-        this.from = from;
+    public void setTarget(String target) {
+        this.target = target;
     }
 
     public String getMsgDb() {

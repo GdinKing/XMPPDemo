@@ -5,10 +5,9 @@ import android.graphics.Bitmap;
 import java.io.Serializable;
 
 /***
- * 名称：
- * 描述：
- * 最近修改时间：2018年09月04日 16:44分
- * @since 2018-09-04
+ * 用户
+ *
+ * @since 2018-09-04 16:44
  * @author king
  */
 public class User implements Serializable {
