@@ -1,15 +1,12 @@
 package com.android.king.xmppdemo.ui;
 
 import android.annotation.SuppressLint;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.king.xmppdemo.R;
@@ -39,11 +36,8 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
     private EditText etAccount;
     private EditText etPassword;
 
-    private Button btnLogin;
-    private TextView tvRegist;
-
-    private ProgressDialog progressDialog;
-
+    private View btnLogin;
+    private View tvRegist;
 
     @Override
     protected int getLayoutId() {
@@ -179,9 +173,6 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
 
         @Override
         public void handleMessage(Message msg) {
-            if (progressDialog != null) {
-                progressDialog.dismiss();
-            }
             if (msg.what == 200) {
                 SPUtil.setBoolean(LoginActivity.this, AppConstants.SP_KEY_LOGIN_STATUS, true);
                 SPUtil.setString(LoginActivity.this, AppConstants.SP_KEY_LOGIN_ACCOUNT, etAccount.getText().toString());

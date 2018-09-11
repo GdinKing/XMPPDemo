@@ -1,7 +1,6 @@
 package com.android.king.xmppdemo.adapter;
 
 import android.content.Context;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,7 +16,6 @@ import com.android.king.xmppdemo.util.CommonUtil;
 import java.util.List;
 
 import io.github.rockerhieu.emojicon.EmojiconTextView;
-import q.rorbin.badgeview.QBadgeView;
 
 /***
  * 名称：
@@ -154,7 +152,6 @@ public class MessageAdapter extends BaseAdapter {
     public void refreshData(List<MessageBean> beanList) {
         this.dataList = beanList;
         notifyDataSetChanged();
-
         initTime = System.currentTimeMillis();
     }
 

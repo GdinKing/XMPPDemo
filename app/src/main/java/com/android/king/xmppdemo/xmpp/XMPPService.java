@@ -21,13 +21,10 @@ import org.jivesoftware.smack.chat2.ChatManager;
 import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.StanzaFilter;
 import org.jivesoftware.smack.filter.StanzaTypeFilter;
-import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.PacketExtension;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smackx.offline.OfflineMessageManager;
-import org.jivesoftware.smackx.receipts.DeliveryReceipt;
-import org.jivesoftware.smackx.receipts.DeliveryReceiptRequest;
+import org.jivesoftware.smackx.receipts.DeliveryReceiptManager;
 
 /***
  * 名称：
@@ -58,6 +55,9 @@ public class XMPPService extends Service {
         ReconnectionManager manager = ReconnectionManager.getInstanceFor(connection);
         manager.setFixedDelay(2);//断线2秒重连
         manager.enableAutomaticReconnection();
+
+        // 自动回复回执方法，如果对方的消息要求回执
+        DeliveryReceiptManager.getInstanceFor(connection).autoAddDeliveryReceiptRequests();
 
         connectionListener = new ConnectionListener() {
 
@@ -175,4 +175,9 @@ public class XMPPService extends Service {
 //    }
 
 
+    @Override
+    public void onDestroy() {
+        Logger.i("XMPPService结束了");
+        super.onDestroy();
+    }
 }

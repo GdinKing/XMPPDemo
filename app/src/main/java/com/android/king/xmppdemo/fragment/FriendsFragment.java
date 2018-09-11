@@ -144,7 +144,7 @@ public class FriendsFragment extends SupportFragment implements View.OnClickList
                 .setGravityOffset(10.0f, true)
                 .setBadgePadding(8.0f, true)
                 .setBadgeNumber(badgeCount);
-        ((HomeFragment) getParentFragment()).addFriendBadge(badgeCount);
+        ((HomeFragment) getParentFragment()).setFriendBadge(badgeCount);
     }
 
 

@@ -23,4 +23,8 @@
             <enum name="bottom" value="0x03" />
         </attr>
     </declare-styleable>
+
+    <declare-styleable name="BadgeView">
+        <attr name="fillColor" format="color"/>
+    </declare-styleable>
 </resources>

@@ -3,6 +3,7 @@ package com.android.king.xmppdemo.fragment;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.text.Editable;
@@ -10,12 +11,9 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.android.king.xmppdemo.R;
@@ -28,8 +26,6 @@ import com.android.king.xmppdemo.event.SendMsgEvent;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.listener.OnTipDialogListener;
 import com.android.king.xmppdemo.net.NetworkExecutor;
-import com.android.king.xmppdemo.ui.SoftInputUtil;
-import com.android.king.xmppdemo.util.DisplayUtil;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
 
@@ -71,7 +67,6 @@ public class MessageFragment extends BaseFragment implements AdapterView.OnItemL
 
     private ListView lvMessage;
     private TextView tvEmpty;
-    private LinearLayout bottomLayout;
     private MessageAdapter messageAdapter;
     private List<MessageBean> dataList = new ArrayList<>();
 
@@ -110,7 +105,6 @@ public class MessageFragment extends BaseFragment implements AdapterView.OnItemL
         ivAdd = rootView.findViewById(R.id.iv_add);
         ivAudio = rootView.findViewById(R.id.iv_audio);
         ivEmoji = rootView.findViewById(R.id.iv_emoji);
-        bottomLayout = rootView.findViewById(R.id.bottom);
 
         emojiFragment = getChildFragmentManager().findFragmentById(R.id.emojicons);
         closeEmoji();
@@ -242,7 +236,6 @@ public class MessageFragment extends BaseFragment implements AdapterView.OnItemL
                 etContent.setText("");
                 break;
             case R.id.iv_emoji:
-                hideSoftInput();
                 openEmoji();
                 break;
             case R.id.iv_add:
@@ -295,14 +288,15 @@ public class MessageFragment extends BaseFragment implements AdapterView.OnItemL
 
     private void openEmoji() {
         if (emojiFragment.isAdded() && emojiFragment.isHidden()) {
+            hideSoftInput();
             getChildFragmentManager().beginTransaction().show(emojiFragment).commit();
             scrollListViewToBottom();
-        }
     }
 
     private void closeEmoji() {
         if (emojiFragment.isAdded() && !emojiFragment.isHidden()) {
             getChildFragmentManager().beginTransaction().hide(emojiFragment).commit();
+          
         }
     }
 
