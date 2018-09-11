@@ -172,15 +172,19 @@ public class MessageFragment extends BaseFragment implements AdapterView.OnItemL
 
         setTitle(targetUser.split("@")[0]);
         loadData();
+    }
 
-        SoftInputUtil.getSoftKeyboardHeight(rootView, new SoftInputUtil.OnGetSoftHeightListener() {
+    /**
+     * 滚动ListView到底部
+     */
+    private void scrollListViewToBottom() {
+        if(lvMessage==null||messageAdapter==null){
+            return;
+        }
+        lvMessage.post(new Runnable() {
             @Override
-            public void onShowed(int height) {
-                Logger.i("键盘高度：" + height);
-                if (emojiFragment == null) {
-                    return;
-                }
-              emojiFragment.getView().setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, height));
+            public void run() {
+                lvMessage.setSelection(messageAdapter.getCount() - 1);
             }
         });
     }
@@ -219,7 +223,7 @@ public class MessageFragment extends BaseFragment implements AdapterView.OnItemL
                     return;
                 }
                 messageAdapter.refreshData(dataList);
-                lvMessage.setSelection(messageAdapter.getCount() - 1);
+                scrollListViewToBottom();
             }
         });
     }
@@ -283,7 +287,7 @@ public class MessageFragment extends BaseFragment implements AdapterView.OnItemL
                 insertMsgDb(bean);
                 dataList.add(bean);
                 messageAdapter.refreshData(dataList);
-                lvMessage.setSelection(messageAdapter.getCount() - 1);
+                scrollListViewToBottom();
                 EventBus.getDefault().post(new SendMsgEvent(bean));
             }
         });
@@ -292,7 +296,7 @@ public class MessageFragment extends BaseFragment implements AdapterView.OnItemL
     private void openEmoji() {
         if (emojiFragment.isAdded() && emojiFragment.isHidden()) {
             getChildFragmentManager().beginTransaction().show(emojiFragment).commit();
-            lvMessage.setSelection(messageAdapter.getCount() - 1);
+            scrollListViewToBottom();
         }
     }
 
