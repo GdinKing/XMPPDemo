@@ -14,6 +14,7 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.android.king.xmppdemo.R;
+import com.android.king.xmppdemo.config.AppConstants;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -143,12 +144,11 @@ public class CommonUtil {
 
     }
 
-    public static final String NOTICE_ID = "NOTICE_ID";
-    public static final String NOTICE_NAME = "NOTICE_NAME";
+
     public static final String ACTION_RECEIVE_NOTICE = "cn.android.king.receive.notice";
     public static final int NOTICE_ID_TYPE_0 = R.string.app_name;
 
-    public static void showNotify(Context context, String msg) {
+    public static void showApplyNotify(Context context, String msg) {
         Intent intent = new Intent(ACTION_RECEIVE_NOTICE);
         int requestCode = (int) SystemClock.uptimeMillis();
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -157,9 +157,9 @@ public class CommonUtil {
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(context.NOTIFICATION_SERVICE);
         NotificationCompat.Builder builder;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(NOTICE_ID, NOTICE_NAME, NotificationManager.IMPORTANCE_HIGH);
+            NotificationChannel channel = new NotificationChannel(AppConstants.FRIEND_CHANNEL_ID, AppConstants.FRIEND_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
             notificationManager.createNotificationChannel(channel);
-            builder = new NotificationCompat.Builder(context, NOTICE_ID);
+            builder = new NotificationCompat.Builder(context, AppConstants.FRIEND_CHANNEL_ID);
         } else {
             builder = new NotificationCompat.Builder(context);
         }
@@ -169,7 +169,32 @@ public class CommonUtil {
         builder.setContentText(msg);
         builder.setContentIntent(pendingIntent);
         Notification notification = builder.build();
-        notificationManager.notify(NOTICE_ID_TYPE_0, notification);
+        notificationManager.notify(AppConstants.FRIEND_NOTIFY_ID, notification);
     }
 
+    /**
+     *
+     * @param context
+     * @param title
+     * @param msg
+     * @param pendingIntent
+     */
+    public static void showMsgNotify(Context context,String title, String msg, PendingIntent pendingIntent) {
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(context.NOTIFICATION_SERVICE);
+        NotificationCompat.Builder builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(AppConstants.MESSAGE_CHANNEL_ID, AppConstants.MESSAGE_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
+            notificationManager.createNotificationChannel(channel);
+            builder = new NotificationCompat.Builder(context, AppConstants.MESSAGE_CHANNEL_ID);
+        } else {
+            builder = new NotificationCompat.Builder(context);
+        }
+        builder.setPriority(NotificationCompat.PRIORITY_MAX);
+        builder.setSmallIcon(R.mipmap.ic_launcher);
+        builder.setContentTitle(title);
+        builder.setContentText(msg);
+        builder.setContentIntent(pendingIntent);
+        Notification notification = builder.build();
+        notificationManager.notify(AppConstants.MESSAGE_NOTIFY_ID, notification);
+    }
 }

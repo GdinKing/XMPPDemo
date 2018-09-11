@@ -103,4 +103,12 @@ public class AppConstants {
                     "note TEXT," +
                     "sign TEXT" +
                     ")";
+
+    public static final String FRIEND_CHANNEL_ID = "FRIEND_CHANNEL_ID";
+    public static final String FRIEND_CHANNEL_NAME = "FRIEND_CHANNEL_NAME";
+    public static final String MESSAGE_CHANNEL_ID = "MESSAGE_CHANNEL_ID";
+    public static final String MESSAGE_CHANNEL_NAME = "MESSAGE_CHANNEL_NAME";
+    public static final String ACTION_RECEIVE_MESSAGE = "action.receive.message";
+    public static final int FRIEND_NOTIFY_ID = 0;
+    public static final int MESSAGE_NOTIFY_ID = 1;
 }

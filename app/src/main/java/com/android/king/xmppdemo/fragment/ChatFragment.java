@@ -1,12 +1,12 @@
 package com.android.king.xmppdemo.fragment;
 
+import android.app.PendingIntent;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,6 +27,7 @@ import com.android.king.xmppdemo.event.SendMsgEvent;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
 import com.android.king.xmppdemo.ui.MessageActivity;
+import com.android.king.xmppdemo.util.CommonUtil;
 import com.android.king.xmppdemo.util.DisplayUtil;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.util.SPUtil;
@@ -200,6 +201,15 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
         String target = chatBean.getTarget();
         String message = chatBean.getMessage();
         long time = chatBean.getTime();
+
+        Intent intent = new Intent(getActivity(), MessageActivity.class);
+        intent.putExtra("targetUser", target);
+        intent.putExtra("msgDb", chatBean.getMsgDb());
+        intent.putExtra("type", chatBean.getType());
+        intent.putExtra("notifyId", AppConstants.MESSAGE_NOTIFY_ID);
+        PendingIntent pendingIntent = PendingIntent.getActivity(getActivity(), 100, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+        CommonUtil.showMsgNotify(getActivity(), target.split("@")[0], message, pendingIntent);
+
         int index = chatAdapter.isExist(target);
         if (index < 0) {
             chatBean.setUnreadCount(1);
@@ -210,7 +220,6 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
             dataList.get(index).setTime(time);
             dataList.get(index).setUnreadCount(dataList.get(index).getUnreadCount() + 1);
             updateChatDb(chatBean);
-
         }
         insertMsgDb(chatBean);
         chatAdapter.refreshData(dataList);
@@ -353,11 +362,11 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
         resetUnreadCount(bean.getTarget());
 
         Intent intent = new Intent(getActivity(), MessageActivity.class);
-        intent.putExtra("targetUser",bean.getTarget());
-        intent.putExtra("msgDb",bean.getMsgDb());
-        intent.putExtra("type",bean.getType());
+        intent.putExtra("targetUser", bean.getTarget());
+        intent.putExtra("msgDb", bean.getMsgDb());
+        intent.putExtra("type", bean.getType());
         startActivity(intent);
-  }
+    }
 
     /**
      * 清除未读数
@@ -376,7 +385,7 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onReadEvent(ReadEvent e){
+    public void onReadEvent(ReadEvent e) {
         resetUnreadCount(e.from);
     }
 }

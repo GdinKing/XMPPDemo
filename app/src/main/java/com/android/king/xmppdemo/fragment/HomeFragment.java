@@ -177,7 +177,7 @@ public class HomeFragment extends SupportFragment implements View.OnClickListene
         String from = event.from;
         switch (event.status) {
             case AppConstants.FriendStatus.SUBSCRIBE:
-                CommonUtil.showNotify(getActivity(), from.split("@")[0] + "请求加你为好友");
+                CommonUtil.showApplyNotify(getActivity(), from.split("@")[0] + "请求加你为好友");
                 checkApplyExist(from);
                 ((FriendsFragment) mFragments[1]).checkApply();
                 break;

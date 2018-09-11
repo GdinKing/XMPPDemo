@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/bg_login"
     android:gravity="center"
     android:orientation="vertical">
 
@@ -10,7 +11,7 @@
         android:layout_width="150dp"
         android:layout_height="150dp"
         android:layout_marginBottom="20dp"
-        android:src="@mipmap/ic_launcher" />
+        android:src="@drawable/ic_logo" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -20,12 +21,14 @@
 
         <ImageView
             android:layout_width="45dp"
-            android:layout_height="45dp" />
+            android:layout_height="45dp"
+            android:src="@drawable/ic_account" />
 
         <com.android.king.xmppdemo.view.DelEditText
             android:id="@+id/et_account"
             android:layout_width="match_parent"
             android:layout_height="45dp"
+            android:background="@drawable/bg_gray_shape"
             android:hint="请输入账号"
             android:inputType="number"
             android:padding="10dp"
@@ -43,12 +46,14 @@
 
         <ImageView
             android:layout_width="45dp"
-            android:layout_height="45dp"/>
+            android:layout_height="45dp"
+            android:src="@drawable/ic_password" />
 
         <com.android.king.xmppdemo.view.DelEditText
             android:id="@+id/et_password"
             android:layout_width="match_parent"
             android:layout_height="45dp"
+            android:background="@drawable/bg_gray_shape"
             android:hint="请输入密码"
             android:inputType="textPassword"
             android:padding="10dp"
@@ -62,9 +67,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="20dp"
+        android:background="@drawable/btn_white_shape"
         android:gravity="center"
         android:padding="12dp"
         android:text="登 录"
+        android:textColor="@color/color_white_gray"
         android:textSize="18sp"
         android:textStyle="bold" />
 
@@ -76,5 +83,6 @@
         android:layout_marginTop="20dp"
         android:padding="10dp"
         android:text="还没账号?点击注册"
+        android:textColor="@color/color_white_gray"
         android:textSize="16sp" />
 </LinearLayout>

@@ -1,6 +1,8 @@
 package com.android.king.xmppdemo.ui;
 
+import android.app.NotificationManager;
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.support.v4.app.FragmentTransaction;
 import android.text.Editable;
@@ -21,7 +23,6 @@ import com.android.king.xmppdemo.entity.MessageBean;
 import com.android.king.xmppdemo.event.ChatEvent;
 import com.android.king.xmppdemo.event.ReadEvent;
 import com.android.king.xmppdemo.event.SendMsgEvent;
-import com.android.king.xmppdemo.fragment.HomeFragment;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.listener.OnTipDialogListener;
 import com.android.king.xmppdemo.net.NetworkExecutor;
@@ -151,7 +152,11 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
         targetUser = getIntent().getStringExtra("targetUser");
         msgDb = getIntent().getStringExtra("msgDb");
         type = getIntent().getIntExtra("type", AppConstants.ChatType.SINGLE);
-
+        int notifyId = getIntent().getIntExtra("notifyId", -1);
+        if (notifyId != -1) {
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.cancel(notifyId);
+        }
         messageAdapter = new MessageAdapter(this, dataList);
         lvMessage.setAdapter(messageAdapter);
         lvMessage.setEmptyView(tvEmpty);
