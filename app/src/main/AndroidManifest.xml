@@ -28,13 +28,21 @@
 
         <activity
             android:name=".ui.LoginActivity"
+            android:screenOrientation="portrait"
             android:launchMode="singleTask" />
 
         <activity
             android:name=".ui.MainActivity"
+            android:screenOrientation="portrait"
             android:launchMode="singleTop" />
 
-        <activity android:name=".ui.RegistActivity" />
+        <activity
+            android:name=".ui.MessageActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize|stateHidden"/>
+
+        <activity android:name=".ui.RegistActivity"
+            android:screenOrientation="portrait" />
 
         <service
             android:name=".xmpp.XMPPService"

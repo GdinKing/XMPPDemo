@@ -11,6 +11,7 @@ public class AppConstants {
     public static final String SP_KEY_LOGIN_STATUS = "login_status";
     public static final String SP_KEY_LOGIN_ACCOUNT = "login_account";
     public static final String SP_KEY_LOGIN_PASSWORD = "login_password";
+    public static final String SP_KEY_SOFT_INPUT_HEIGHT = "soft_input_height";
 
     public static class FriendStatus {
         public static final String SUBSCRIBE = "subscribe";  //收到申请

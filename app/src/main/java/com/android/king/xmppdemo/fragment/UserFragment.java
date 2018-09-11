@@ -1,5 +1,6 @@
 package com.android.king.xmppdemo.fragment;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -13,6 +14,7 @@ import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.ui.MessageActivity;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
 
@@ -127,7 +129,11 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btn_send_msg:
-                start(MessageFragment.newInstance(account, account.split("@")[0], AppConstants.ChatType.SINGLE));
+                Intent intent = new Intent(getActivity(), MessageActivity.class);
+                intent.putExtra("targetUser",account);
+                intent.putExtra("msgDb", account.split("@")[0]);
+                intent.putExtra("type",AppConstants.ChatType.SINGLE);
+                startActivity(intent);
                 break;
         }
     }

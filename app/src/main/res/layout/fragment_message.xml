@@ -3,7 +3,10 @@
     xmlns:emojicon="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/container"
+    android:fitsSystemWindows="true"
     android:background="@color/background">
+
 
     <include
         android:id="@+id/actionbar"
@@ -16,11 +19,13 @@
         android:id="@+id/lv_message"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_above="@+id/bottom"
         android:layout_below="@+id/actionbar"
-        android:listSelector="@color/background"
         android:cacheColorHint="@color/background"
         android:divider="@null"
-        android:layout_above="@+id/bottom"/>
+        android:listSelector="@color/background"
+        android:stackFromBottom="true"
+        android:transcriptMode="alwaysScroll" />
 
 
     <LinearLayout
@@ -48,9 +53,8 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                emojicon:emojiconSize="28sp"
                 android:maxLines="1"
-                />
+                emojicon:emojiconSize="28sp" />
 
             <ImageView
                 android:id="@+id/iv_emoji"
@@ -82,13 +86,18 @@
 
         </LinearLayout>
 
-
-        <fragment
-            android:id="@+id/emojicons"
-            class="io.github.rockerhieu.emojicon.EmojiconGridFragment"
+        <FrameLayout
+            android:id="@+id/panel_root"
             android:layout_width="match_parent"
             android:layout_height="270dp"
-            android:paddingTop="5dp"/>
+            android:visibility="gone">
+
+        </FrameLayout>
+        <!--<fragment-->
+        <!--android:id="@+id/emojicons"-->
+        <!--class="io.github.rockerhieu.emojicon.EmojiconGridFragment"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="270dp"/>-->
     </LinearLayout>
 
     <TextView
@@ -103,4 +112,7 @@
         android:textColor="@color/text_gray"
         android:textSize="18sp"
         android:visibility="gone" />
+
+
+
 </RelativeLayout>

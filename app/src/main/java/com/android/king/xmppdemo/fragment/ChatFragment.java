@@ -1,10 +1,12 @@
 package com.android.king.xmppdemo.fragment;
 
 import android.content.ContentValues;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,9 +22,11 @@ import com.android.king.xmppdemo.entity.ChatBean;
 import com.android.king.xmppdemo.entity.MessageBean;
 import com.android.king.xmppdemo.event.ChatEvent;
 import com.android.king.xmppdemo.event.MessageEvent;
+import com.android.king.xmppdemo.event.ReadEvent;
 import com.android.king.xmppdemo.event.SendMsgEvent;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.ui.MessageActivity;
 import com.android.king.xmppdemo.util.DisplayUtil;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.util.SPUtil;
@@ -63,21 +67,30 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
 
         lvChat = v.findViewById(R.id.lv_chat);
         tvEmpty = v.findViewById(R.id.tv_empty);
+
+        EventBus.getDefault().register(this);
         initData();
         loadData();
         return v;
     }
 
+
     @Override
     public void onStart() {
         super.onStart();
-        EventBus.getDefault().register(this);
+
     }
 
     @Override
     public void onStop() {
         super.onStop();
+
+    }
+
+    @Override
+    public void onDestroy() {
         EventBus.getDefault().unregister(this);
+        super.onDestroy();
     }
 
     private void initData() {
@@ -294,6 +307,7 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
                     Logger.e(e);
                     return;
                 }
+                Logger.i("更新消息");
                 EventBus.getDefault().post(new ChatEvent());
             }
         });
@@ -337,8 +351,13 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         ChatBean bean = dataList.get(position);
         resetUnreadCount(bean.getTarget());
-        ((HomeFragment) getParentFragment()).startFragment(MessageFragment.newInstance(bean.getTarget(), bean.getMsgDb(), bean.getType()));
-    }
+
+        Intent intent = new Intent(getActivity(), MessageActivity.class);
+        intent.putExtra("targetUser",bean.getTarget());
+        intent.putExtra("msgDb",bean.getMsgDb());
+        intent.putExtra("type",bean.getType());
+        startActivity(intent);
+  }
 
     /**
      * 清除未读数
@@ -347,9 +366,6 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
      */
     private void resetUnreadCount(String from) {
         try {
-            ContentValues cv = new ContentValues();
-            cv.put("unread", 0);
-            SQLiteHelper.getInstance(getActivity()).update(AppConstants.TABLE_CHAT, cv, "fromUser=?", new String[]{from});
             int index = chatAdapter.isExist(from);
             dataList.get(index).setUnreadCount(0);
             chatAdapter.refreshData(dataList);
@@ -357,5 +373,10 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
         } catch (Exception e) {
             Logger.e(e);
         }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onReadEvent(ReadEvent e){
+        resetUnreadCount(e.from);
     }
 }
