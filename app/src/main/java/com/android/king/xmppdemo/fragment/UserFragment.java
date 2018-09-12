@@ -110,8 +110,9 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
                     }
                 } else {
                     tvAccount.setText("账号：" + account.split("@")[0]);
-                    tvAccount.setText("tvNick：" + account.split("@")[0]);
-                    tvNote.setText(account);
+                    tvNote.setText(note);
+                    tvNick.setText("昵称：");
+                    tvNote.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
                     ivAvatar.setImageResource(R.drawable.ic_default_avatar);
                 }
 

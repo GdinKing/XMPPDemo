@@ -8,6 +8,8 @@ package com.android.king.xmppdemo.config;
  */
 public class AppConstants {
 
+    public static final int RECONNECT_DELAY = 5000;//重连延时
+
     public static final String SP_KEY_LOGIN_STATUS = "login_status";
     public static final String SP_KEY_LOGIN_ACCOUNT = "login_account";
     public static final String SP_KEY_LOGIN_PASSWORD = "login_password";

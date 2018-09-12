@@ -17,6 +17,7 @@ import org.jivesoftware.smack.ReconnectionManager;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.chat2.ChatManager;
 import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.StanzaFilter;
@@ -25,6 +26,8 @@ import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smackx.offline.OfflineMessageManager;
 import org.jivesoftware.smackx.receipts.DeliveryReceiptManager;
+
+import java.io.IOException;
 
 /***
  * 名称：
@@ -35,11 +38,9 @@ import org.jivesoftware.smackx.receipts.DeliveryReceiptManager;
  */
 public class XMPPService extends Service {
 
-    private ChatManager chatManager;
-    private OfflineMessageManager offlineManager;
+
     public static AbstractXMPPConnection connection = null;
 
-    private IncomingMsgListener incomingListener = null;
     private ConnectionListener connectionListener;
 
     @Override
@@ -47,18 +48,15 @@ public class XMPPService extends Service {
         return null;
     }
 
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+    }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         connection = XMPPHelper.getInstance().getConnection();
-        //重连
-        ReconnectionManager manager = ReconnectionManager.getInstanceFor(connection);
-        manager.setFixedDelay(2);//断线2秒重连
-        manager.enableAutomaticReconnection();
-
-        // 自动回复回执方法，如果对方的消息要求回执
-        DeliveryReceiptManager.getInstanceFor(connection).autoAddDeliveryReceiptRequests();
-
         connectionListener = new ConnectionListener() {
 
             @Override
@@ -82,7 +80,7 @@ public class XMPPService extends Service {
                 if (e == null) {
                     return;
                 }
-                if (e.getMessage()!=null&&e.getMessage().contains("conflict")){ //被挤掉线
+                if (e.getMessage() != null && e.getMessage().contains("conflict")) { //被挤掉线
                     //被人挤下线,重新弹出登录
                     Toast.makeText(getApplication(), "您的账号在别处登录", Toast.LENGTH_LONG).show();
                     EventBus.getDefault().post(new ReconnectErrorEvent());
@@ -105,6 +103,7 @@ public class XMPPService extends Service {
 
             @Override
             public void reconnectingIn(int i) {
+                //i为重连倒计时
                 Logger.i("来自连接监听,reconnectingIn:" + i);
             }
 
@@ -112,44 +111,21 @@ public class XMPPService extends Service {
             public void reconnectionFailed(Exception e) {
                 Logger.i("来自连接监听,重连失败");
                 Logger.e(e);
+                connection.disconnect();
+                try {
+                    Thread.sleep(1500);
+                    connection.connect();
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                }
             }
         };
         connection.addConnectionListener(connectionListener);
-        addStanzaListener();
 
-        if (incomingListener == null) {
-            incomingListener = new IncomingMsgListener();
-        }
-        if (chatManager == null) {
-            chatManager = ChatManager.getInstanceFor(connection);
-            chatManager.addIncomingListener(incomingListener);
-        }
+
         return START_STICKY;
     }
 
-    /**
-     * 响应回复监听
-     */
-    public void addStanzaListener() {
-        //条件过滤
-        StanzaFilter filter = new AndFilter(new StanzaTypeFilter(Presence.class));
-        StanzaListener listener = new StanzaListener() {
-            @Override
-            public void processStanza(Stanza stanza) {
-                Logger.i(stanza.toString());
-                if (stanza instanceof Presence) {
-                    Presence p = (Presence) stanza;
-                    Logger.i("收到回复：" + p.getFrom() + "--" + p.getType());
-                    String from = p.getFrom().toString();
-                    String status = p.getType().toString();
-                    EventBus.getDefault().post(new FriendEvent(from, status));
-                }
-            }
-
-        };
-        connection.addAsyncStanzaListener(listener, filter);
-
-    }
 
 //    private void reconnect() {
 //        final String account = SPUtil.getString(this, AppConstants.SP_KEY_LOGIN_ACCOUNT);

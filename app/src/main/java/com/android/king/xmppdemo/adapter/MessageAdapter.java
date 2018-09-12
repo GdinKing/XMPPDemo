@@ -90,10 +90,8 @@ public class MessageAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        InTextHolder inTextHolder = null;
-        OutTextHolder outTextHolder = null;
-        InImageHolder inImageHolder = null;
-        OutImageHolder outImageHolder = null;
+        TextHolder textHolder = null;
+        ImageHolder imageHolder = null;
 
         int type = getItemViewType(position);
         if (convertView == null) {
@@ -101,51 +99,44 @@ public class MessageAdapter extends BaseAdapter {
             switch (type) {
                 case TYPE_TEXT_IN:
                     convertView = mInflater.inflate(R.layout.item_msg_in_text, null);
-                    inTextHolder = new InTextHolder();
-                    inTextHolder.init(convertView);
-                    convertView.setTag(inTextHolder);
+                    textHolder = new TextHolder();
+                    textHolder.init(convertView);
+                    convertView.setTag(textHolder);
                     break;
                 case TYPE_TEXT_OUT:
                     convertView = mInflater.inflate(R.layout.item_msg_out_text, null);
-                    outTextHolder = new OutTextHolder();
-                    outTextHolder.init(convertView);
-                    convertView.setTag(outTextHolder);
+                    textHolder = new TextHolder();
+                    textHolder.init(convertView);
+                    convertView.setTag(textHolder);
                     break;
                 case TYPE_IMAGE_IN:
                     convertView = mInflater.inflate(R.layout.item_msg_in_image, null);
-                    inImageHolder = new InImageHolder();
-                    inImageHolder.init(convertView);
-                    convertView.setTag(inImageHolder);
+                    imageHolder = new ImageHolder();
+                    imageHolder.init(convertView);
+                    convertView.setTag(imageHolder);
                     break;
                 case TYPE_IMAGE_OUT:
                     convertView = mInflater.inflate(R.layout.item_msg_out_image, null);
-                    outImageHolder = new OutImageHolder();
-                    outImageHolder.init(convertView);
-                    convertView.setTag(outImageHolder);
+                    imageHolder = new ImageHolder();
+                    imageHolder.init(convertView);
+                    convertView.setTag(imageHolder);
                     break;
             }
         } else {
             switch (type) {
                 case TYPE_TEXT_IN:
-                    inTextHolder = (InTextHolder) convertView.getTag();
-                    break;
                 case TYPE_TEXT_OUT:
-                    outTextHolder = (OutTextHolder) convertView.getTag();
+                    textHolder = (TextHolder) convertView.getTag();
                     break;
                 case TYPE_IMAGE_IN:
-                    inImageHolder = (InImageHolder) convertView.getTag();
-                    break;
                 case TYPE_IMAGE_OUT:
-                    outImageHolder = (OutImageHolder) convertView.getTag();
+                    imageHolder = (ImageHolder) convertView.getTag();
                     break;
-
             }
         }
         MessageBean bean = dataList.get(position);
-        setInText(inTextHolder, bean);
-        setOutText(outTextHolder, bean, position);
-        setIntImage(inImageHolder, bean);
-        setOutImage(outImageHolder, bean);
+        setTextHolder(textHolder, bean);
+        setImageHolder(imageHolder, bean);
         return convertView;
     }
 
@@ -174,95 +165,48 @@ public class MessageAdapter extends BaseAdapter {
         return -1;
     }
 
-    private void setInText(InTextHolder inTextHolder, MessageBean bean) {
-        if (inTextHolder == null) {
+    private void setTextHolder(TextHolder textHolder, MessageBean bean) {
+        if (textHolder == null) {
             return;
         }
-        if (Math.abs(bean.getTime() - initTime) > 2 * 60 * 1000) {
-            inTextHolder.tvTime.setVisibility(View.VISIBLE);
+        if (Math.abs(bean.getTime() - initTime) > 3 * 60 * 1000) {
+            textHolder.tvTime.setVisibility(View.VISIBLE);
         } else {
-            inTextHolder.tvTime.setVisibility(View.GONE);
+            textHolder.tvTime.setVisibility(View.GONE);
         }
-        inTextHolder.tvName.setVisibility(bean.getType() == AppConstants.ChatType.SINGLE ? View.GONE : View.VISIBLE);
-        inTextHolder.tvName.setText(bean.getFrom());
-        inTextHolder.tvMessage.setText(bean.getContent());
-        inTextHolder.tvTime.setText(CommonUtil.formatMsgTime(bean.getTime()));
-        inTextHolder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
+        textHolder.tvName.setVisibility(bean.getType() == AppConstants.ChatType.SINGLE ? View.GONE : View.VISIBLE);
+        textHolder.tvName.setText(bean.getFrom());
+        textHolder.tvMessage.setText(bean.getContent());
+        textHolder.tvTime.setText(CommonUtil.formatMsgTime(bean.getTime()));
+        textHolder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
         initTime = bean.getTime();
     }
 
-    private void setOutText(OutTextHolder outTextHolder, MessageBean bean, final int position) {
-        if (outTextHolder == null) {
+
+
+    private void setImageHolder(ImageHolder imageHolder, MessageBean bean) {
+        if (imageHolder == null) {
             return;
         }
-        if (Math.abs(bean.getTime() - initTime) > 2 * 60 * 1000) {
-            outTextHolder.tvTime.setVisibility(View.VISIBLE);
+        if (Math.abs(bean.getTime() - initTime) > 3 * 60 * 1000) {
+            imageHolder.tvTime.setVisibility(View.VISIBLE);
         } else {
-            outTextHolder.tvTime.setVisibility(View.GONE);
+            imageHolder.tvTime.setVisibility(View.GONE);
         }
-        if (bean.getStatus() == AppConstants.MessageStatus.ERROR) {
-            outTextHolder.ivError.setVisibility(View.VISIBLE);
-        } else {
-            outTextHolder.ivError.setVisibility(View.GONE);
-        }
-        outTextHolder.tvName.setVisibility(bean.getType() == AppConstants.ChatType.SINGLE ? View.GONE : View.VISIBLE);
-        outTextHolder.tvName.setText(bean.getFrom());
-        outTextHolder.tvMessage.setText(bean.getContent());
-        outTextHolder.tvTime.setText(CommonUtil.formatMsgTime(bean.getTime()));
-        outTextHolder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
-
-        outTextHolder.ivError.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (listener != null) {
-                    listener.onResend(position);
-                }
-            }
-        });
-        initTime = bean.getTime();
-    }
-
-    private void setIntImage(InImageHolder inImageHolder, MessageBean bean) {
-        if (inImageHolder == null) {
-            return;
-        }
-        if (Math.abs(bean.getTime() - initTime) > 2 * 60 * 1000) {
-            inImageHolder.tvTime.setVisibility(View.VISIBLE);
-        } else {
-            inImageHolder.tvTime.setVisibility(View.GONE);
-        }
-        inImageHolder.tvName.setVisibility(bean.getType() == AppConstants.ChatType.SINGLE ? View.GONE : View.VISIBLE);
-        inImageHolder.tvName.setText(bean.getFrom());
-        inImageHolder.ivImage.setImageResource(R.drawable.ic_default_avatar);
-        inImageHolder.tvTime.setText(CommonUtil.formatMsgTime(bean.getTime()));
-        inImageHolder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
-
-    }
-
-    private void setOutImage(OutImageHolder outImageHolder, MessageBean bean) {
-        if (outImageHolder == null) {
-            return;
-        }
-        if (Math.abs(bean.getTime() - initTime) > 2 * 60 * 1000) {
-            outImageHolder.tvTime.setVisibility(View.VISIBLE);
-        } else {
-            outImageHolder.tvTime.setVisibility(View.GONE);
-        }
-        outImageHolder.tvName.setVisibility(bean.getType() == AppConstants.ChatType.SINGLE ? View.GONE : View.VISIBLE);
-        outImageHolder.tvName.setText(bean.getFrom());
-        outImageHolder.ivImage.setImageResource(R.drawable.ic_default_avatar);
-        outImageHolder.tvTime.setText(CommonUtil.formatMsgTime(bean.getTime()));
-        outImageHolder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
+        imageHolder.tvName.setVisibility(bean.getType() == AppConstants.ChatType.SINGLE ? View.GONE : View.VISIBLE);
+        imageHolder.tvName.setText(bean.getFrom());
+        imageHolder.ivImage.setImageResource(R.drawable.ic_default_avatar);
+        imageHolder.tvTime.setText(CommonUtil.formatMsgTime(bean.getTime()));
+        imageHolder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
 
     }
 
 
-    static class InTextHolder {
+    static class TextHolder {
         TextView tvName;
         EmojiconTextView tvMessage;
         TextView tvTime;
         ImageView ivAvatar;
-
 
         public void init(View v) {
             tvName = v.findViewById(R.id.tv_name);
@@ -272,39 +216,8 @@ public class MessageAdapter extends BaseAdapter {
         }
     }
 
-    static class OutTextHolder {
-        TextView tvName;
-        EmojiconTextView tvMessage;
-        TextView tvTime;
-        ImageView ivAvatar;
-        ImageView ivError;
 
-
-        public void init(View v) {
-            tvName = v.findViewById(R.id.tv_name);
-            tvMessage = v.findViewById(R.id.tv_message);
-            tvTime = v.findViewById(R.id.tv_time);
-            ivAvatar = v.findViewById(R.id.iv_avatar);
-            ivError = v.findViewById(R.id.iv_error);
-        }
-    }
-
-    static class InImageHolder {
-        TextView tvName;
-        ImageView ivImage;
-        TextView tvTime;
-        ImageView ivAvatar;
-
-
-        public void init(View v) {
-            tvName = v.findViewById(R.id.tv_name);
-            ivImage = v.findViewById(R.id.iv_image);
-            tvTime = v.findViewById(R.id.tv_time);
-            ivAvatar = v.findViewById(R.id.iv_avatar);
-        }
-    }
-
-    static class OutImageHolder {
+    static class ImageHolder {
         TextView tvName;
         ImageView ivImage;
         TextView tvTime;

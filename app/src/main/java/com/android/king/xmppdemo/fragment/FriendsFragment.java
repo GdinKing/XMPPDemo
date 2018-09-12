@@ -15,6 +15,7 @@ import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.adapter.FriendAdapter;
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.db.SQLiteHelper;
+import com.android.king.xmppdemo.entity.Apply;
 import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.event.AgreeEvent;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
@@ -116,7 +117,7 @@ public class FriendsFragment extends SupportFragment implements View.OnClickList
             if (null != cursor) {
                 while (cursor.moveToNext()) {
                     int isAgree = cursor.getInt(cursor.getColumnIndex("isAgree"));
-                    if (isAgree == 0) {//有未同意的
+                    if (isAgree == Apply.STATUS_UNAGREE) {//有未同意的
                         addFriendBadge();
                     }
                 }

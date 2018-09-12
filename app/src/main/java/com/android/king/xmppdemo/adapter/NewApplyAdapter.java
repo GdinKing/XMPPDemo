@@ -67,12 +67,29 @@ public class NewApplyAdapter extends BaseAdapter {
 
         Apply apply = dataList.get(position);
         holder.tvName.setText(apply.getUser().getName());
-        holder.tvAgree.setEnabled(!apply.isAgree());
+        if(apply.getStatus()==Apply.STATUS_IGNORE){
+            holder.tvIgnore.setText("已忽略");
+            holder.tvIgnore.setEnabled(false);
+            holder.tvAgree.setVisibility(View.GONE);
+        }else {
+            holder.tvIgnore.setText("忽略");
+            holder.tvIgnore.setEnabled(true);
+            holder.tvAgree.setVisibility(View.VISIBLE);
+            holder.tvAgree.setEnabled(apply.getStatus() == Apply.STATUS_UNAGREE);
+        }
         holder.tvAgree.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (agreeClickListener != null) {
                     agreeClickListener.onAgree(position);
+                }
+            }
+        });
+        holder.tvIgnore.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (agreeClickListener != null) {
+                    agreeClickListener.onIgnore(position);
                 }
             }
         });
@@ -92,6 +109,7 @@ public class NewApplyAdapter extends BaseAdapter {
 
     public interface OnAgreeClickListener {
         void onAgree(int position);
+        void onIgnore(int position);
     }
 
     public void setAgreeClickListener(OnAgreeClickListener agreeClickListener) {
@@ -101,12 +119,14 @@ public class NewApplyAdapter extends BaseAdapter {
     static class ViewHolder {
         TextView tvName;
         TextView tvAgree;
+        TextView tvIgnore;
         ImageView ivAvatar;
 
 
         public void init(View v) {
             tvName = v.findViewById(R.id.tv_name);
             tvAgree = v.findViewById(R.id.tv_agree);
+            tvIgnore = v.findViewById(R.id.tv_ignore);
             ivAvatar = v.findViewById(R.id.iv_avatar);
         }
     }

@@ -14,7 +14,6 @@ import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
 import com.android.king.xmppdemo.util.CommonUtil;
-import com.android.king.xmppdemo.util.DisplayUtil;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.util.SPUtil;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
@@ -24,8 +23,6 @@ import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.Presence;
-
-import cn.dreamtobe.kpswitch.util.KeyboardUtil;
 
 
 /***

@@ -41,5 +41,5 @@ dependencies {
 
     implementation 'com.owater.library:CircleTextViewlibrary:0.8.3'
 
-    implementation 'cn.dreamtobe.kpswitch:library:1.6.1'
+    implementation 'me.weyye.hipermission:library:1.0.7'
 }

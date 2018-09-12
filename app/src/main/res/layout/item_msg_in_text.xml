@@ -55,7 +55,6 @@
             android:layout_marginLeft="8dp"
             android:background="@drawable/ic_left_pop"
             android:maxWidth="240dp"
-            android:text="撒地方见客户"
             android:textColor="@color/gray"
             android:textSize="16sp"
             app:emojiconSize="28sp" />

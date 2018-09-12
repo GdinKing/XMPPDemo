@@ -6,23 +6,36 @@ import android.text.TextUtils;
 
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.entity.User;
+import com.android.king.xmppdemo.event.FriendEvent;
+import com.android.king.xmppdemo.listener.IncomingMsgListener;
 import com.android.king.xmppdemo.util.Logger;
 
+import org.greenrobot.eventbus.EventBus;
 import org.jivesoftware.smack.AbstractXMPPConnection;
+import org.jivesoftware.smack.ReconnectionManager;
 import org.jivesoftware.smack.SASLAuthentication;
 import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.chat2.Chat;
 import org.jivesoftware.smack.chat2.ChatManager;
+import org.jivesoftware.smack.filter.AndFilter;
+import org.jivesoftware.smack.filter.StanzaFilter;
+import org.jivesoftware.smack.filter.StanzaTypeFilter;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.provider.ProviderManager;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.jivesoftware.smackx.iqregister.AccountManager;
+import org.jivesoftware.smackx.offline.OfflineMessageManager;
+import org.jivesoftware.smackx.ping.PingFailedListener;
+import org.jivesoftware.smackx.ping.PingManager;
 import org.jivesoftware.smackx.receipts.DeliveryReceipt;
+import org.jivesoftware.smackx.receipts.DeliveryReceiptManager;
 import org.jivesoftware.smackx.receipts.DeliveryReceiptRequest;
 import org.jivesoftware.smackx.search.UserSearch;
 import org.jivesoftware.smackx.vcardtemp.VCardManager;
@@ -62,6 +75,10 @@ public class XMPPHelper {
     private static XMPPHelper mInstance = null;
 
     private AbstractXMPPConnection xmppConnection = null;
+
+    private ChatManager chatManager;
+    private OfflineMessageManager offlineManager;
+    private IncomingMsgListener incomingListener = null;
 
     private XMPPHelper() {
         xmppConnection = openConnection();
@@ -118,11 +135,15 @@ public class XMPPHelper {
             ProviderManager.addIQProvider("vCard", "vcard-temp", new VCardProvider());
             ProviderManager.addIQProvider("query", "jabber:iq:search", new UserSearch.Provider());
 
-            ProviderManager.addExtensionProvider(DeliveryReceipt.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceipt.Provider());
-            ProviderManager.addExtensionProvider(DeliveryReceiptRequest.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceiptRequest.Provider());
 
             XMPPTCPConnectionConfiguration config = builder.build();
             conn = new XMPPTCPConnection(config);
+
+            // 自动回复回执方法，如果对方的消息要求回执
+            ProviderManager.addExtensionProvider(DeliveryReceipt.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceipt.Provider());
+            ProviderManager.addExtensionProvider(DeliveryReceiptRequest.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceiptRequest.Provider());
+            DeliveryReceiptManager.getInstanceFor(xmppConnection).autoAddDeliveryReceiptRequests();
+
         } catch (Exception e) {
             Logger.e(e);
         }
@@ -138,9 +159,10 @@ public class XMPPHelper {
      * @throws IOException
      */
     public void login(String username, String password, String resource) throws IOException, InterruptedException, XMPPException, SmackException {
-        if (isConnected()) {
-            xmppConnection.disconnect();
-        }
+//        if (isConnected()) {
+//            xmppConnection.disconnect();
+//            Thread.sleep(1000);
+//        }
         xmppConnection.connect();
 
         SASLAuthentication.blacklistSASLMechanism("ANONYMOUS");
@@ -149,7 +171,26 @@ public class XMPPHelper {
         SASLAuthentication.unBlacklistSASLMechanism("PLAIN");
         SASLAuthentication.blacklistSASLMechanism("SCRAM-SHA-1-PLUS");
 
+        ReconnectionManager manager = ReconnectionManager.getInstanceFor(xmppConnection);
+        manager.setFixedDelay(0);//延迟0秒重连
+        manager.enableAutomaticReconnection();
+
         xmppConnection.login(username, password, Resourcepart.from(resource));
+    }
+
+    /**
+     * 重连
+     *
+     * @throws Exception
+     */
+    public void reconnect() throws Exception {
+        if (isConnected()) {
+            return;
+        }
+        xmppConnection.connect();
+        if (!xmppConnection.isAuthenticated()) {
+            xmppConnection.login();//之前登陆过了，smack会设置账号密码，可看login()的源码
+        }
     }
 
     /**
@@ -209,6 +250,7 @@ public class XMPPHelper {
         if (isConnected()) {
             xmppConnection.disconnect();
         }
+        removeMessageListener();
     }
 
     /**
@@ -475,18 +517,20 @@ public class XMPPHelper {
         return ic;
     }
 
-/**
- * 发消息
- *
- * @param type    消息类型
- * @param subject 消息头
- * @param user    目标
- * @param body    消息
- * @throws Exception
- */
+    /**
+     * 发消息
+     *
+     * @param type    消息类型
+     * @param subject 消息头
+     * @param user    目标
+     * @param body    消息
+     * @throws Exception
+     */
     public void sendUserMsg(Message.Type type, String subject,
                             String user, String body) throws Exception {
-
+        if (!isLogin()) {
+            throw new RuntimeException("连接错误");
+        }
         ChatManager chatManager = ChatManager.getInstanceFor(xmppConnection);
         EntityBareJid targetUser = JidCreate.entityBareFrom(user);
         Chat chat = chatManager.chatWith(targetUser);
@@ -497,4 +541,60 @@ public class XMPPHelper {
         chat.send(msg);
     }
 
+
+    /**
+     * 添加消息监听
+     */
+    public void addMessageListener() {
+        if (incomingListener == null) {
+            incomingListener = new IncomingMsgListener();
+        }
+        if (chatManager == null) {
+            chatManager = ChatManager.getInstanceFor(xmppConnection);
+        }
+        chatManager.addIncomingListener(incomingListener);
+    }
+
+    /**
+     * 移除监听
+     */
+    public void removeMessageListener() {
+        if (chatManager == null || incomingListener == null) {
+            return;
+        }
+        chatManager.removeIncomingListener(incomingListener);
+    }
+
+    /**
+     * 响应回复监听
+     */
+    public void addStanzaListener() {
+        //条件过滤
+        StanzaFilter filter = new AndFilter(new StanzaTypeFilter(Presence.class));
+        StanzaListener listener = new StanzaListener() {
+            @Override
+            public void processStanza(Stanza stanza) {
+                Logger.i(stanza.toString());
+                if (stanza instanceof Presence) {
+                    Presence p = (Presence) stanza;
+                    Logger.i("收到回复：" + p.getFrom() + "--" + p.getType());
+                    String from = p.getFrom().toString();
+                    String status = p.getType().toString();
+                    EventBus.getDefault().post(new FriendEvent(from, status));
+                }
+            }
+
+        };
+
+        xmppConnection.addAsyncStanzaListener(listener, filter);
+    }
+
+
+    /**
+     * 心跳连接
+     */
+    public void addHeartBeat(PingFailedListener listener) {
+        PingManager.setDefaultPingInterval(10000);//10秒心跳连接
+        PingManager.getInstanceFor(xmppConnection).registerPingFailedListener(listener);
+    }
 }

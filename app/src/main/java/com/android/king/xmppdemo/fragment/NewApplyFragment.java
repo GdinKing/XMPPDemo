@@ -63,6 +63,12 @@ public class NewApplyFragment extends BaseFragment {
                 Apply apply = dataList.get(position);
                 acceptRejectApply(apply.getUser().getAccount(), 0);
             }
+
+            @Override
+            public void onIgnore(int position) {
+                Apply apply = dataList.get(position);
+                acceptRejectApply(apply.getUser().getAccount(), 1);
+            }
         });
         loadData();
     }
@@ -75,7 +81,7 @@ public class NewApplyFragment extends BaseFragment {
                 Cursor cursor = SQLiteHelper.getInstance(getActivity()).query(AppConstants.TABLE_APPLY, null, null, null, null, null, null);
                 if (null != cursor) {
                     while (cursor.moveToNext()) {
-                        String from = cursor.getString(cursor.getColumnIndex("from"));
+                        String from = cursor.getString(cursor.getColumnIndex("fromUser"));
                         String name = cursor.getString(cursor.getColumnIndex("name"));
                         int isAgree = cursor.getInt(cursor.getColumnIndex("isAgree"));
 
@@ -83,7 +89,7 @@ public class NewApplyFragment extends BaseFragment {
                         user.setName(name);
                         user.setAccount(from);
 
-                        Apply apply = new Apply(user, isAgree != 0);
+                        Apply apply = new Apply(user, isAgree);
 
                         dataList.add(apply);
                     }
@@ -128,12 +134,12 @@ public class NewApplyFragment extends BaseFragment {
                 }
                 if (result == 0) {
                     ContentValues cv = new ContentValues();
-                    cv.put("isAgree", 1);
+                    cv.put("isAgree", Apply.STATUS_AGREED);
                     SQLiteHelper.getInstance(getActivity()).update(AppConstants.TABLE_APPLY, cv, "fromUser=?", new String[]{from});
 
                 } else {
                     ContentValues cv = new ContentValues();
-                    cv.put("isAgree", 0);
+                    cv.put("isAgree", Apply.STATUS_IGNORE);
                     SQLiteHelper.getInstance(getActivity()).update(AppConstants.TABLE_APPLY, cv, "fromUser=?", new String[]{from});
                 }
                 EventBus.getDefault().post(new AgreeEvent());

@@ -24,7 +24,6 @@
         android:cacheColorHint="@color/background"
         android:divider="@null"
         android:listSelector="@color/background"
-        android:stackFromBottom="true"
         android:transcriptMode="alwaysScroll" />
 
 
@@ -93,11 +92,6 @@
             android:visibility="gone">
 
         </FrameLayout>
-        <!--<fragment-->
-        <!--android:id="@+id/emojicons"-->
-        <!--class="io.github.rockerhieu.emojicon.EmojiconGridFragment"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="270dp"/>-->
     </LinearLayout>
 
     <TextView

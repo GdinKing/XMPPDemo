@@ -18,6 +18,7 @@ import android.widget.Toast;
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.db.SQLiteHelper;
+import com.android.king.xmppdemo.entity.Apply;
 import com.android.king.xmppdemo.event.FriendEvent;
 import com.android.king.xmppdemo.event.ReconnectErrorEvent;
 import com.android.king.xmppdemo.net.NetworkExecutor;
@@ -83,7 +84,8 @@ public class HomeFragment extends SupportFragment implements View.OnClickListene
         prePosition = 0;
 
     }
-    private String getCurrentLogin(){
+
+    private String getCurrentLogin() {
         return SPUtil.getString(getActivity(), AppConstants.SP_KEY_LOGIN_ACCOUNT);
     }
 
@@ -190,7 +192,7 @@ public class HomeFragment extends SupportFragment implements View.OnClickListene
                 break;
             case AppConstants.FriendStatus.UNAVAILABLE:
 
-                if(from.split("@")[0].equals(getCurrentLogin())){
+                if (from.split("@")[0].equals(getCurrentLogin())) {
                     //如果是自身离线了，则重新上线，否则会断开闲置连接
                     NetworkExecutor.getInstance().execute(new Runnable() {
                         @Override
@@ -205,8 +207,7 @@ public class HomeFragment extends SupportFragment implements View.OnClickListene
 
 
     /**
-     * 查询好友申请是否已存在数据库表中，存在则置isAgree为0，不存在就插入
-     * 这里的数据库查询并不算太耗时，所以没有用异步
+     * 查询好友申请是否已存在数据库表中
      *
      * @param from
      */
@@ -214,16 +215,18 @@ public class HomeFragment extends SupportFragment implements View.OnClickListene
         Cursor cursor = SQLiteHelper.getInstance(getActivity()).query(AppConstants.TABLE_APPLY, new String[]{"fromUser", "isAgree"}, "fromUser=?", new String[]{from}, null, null, null);
         if (null != cursor) {
             if (cursor.moveToFirst()) {
-                ContentValues cv = new ContentValues();
-                cv.put("isAgree", 0);
-                SQLiteHelper.getInstance(getActivity()).update(AppConstants.TABLE_APPLY, cv, "fromUser=?", new String[]{from});
+                int status = cursor.getInt(cursor.getColumnIndex("isAgree"));
+                if (status != Apply.STATUS_IGNORE && status != Apply.STATUS_AGREED) {
+                    ContentValues cv = new ContentValues();
+                    cv.put("isAgree", Apply.STATUS_UNAGREE);
+                    SQLiteHelper.getInstance(getActivity()).update(AppConstants.TABLE_APPLY, cv, "fromUser=?", new String[]{from});
+                }
             } else {
                 ContentValues cv = new ContentValues();
                 cv.put("fromUser", from);
                 cv.put("name", from.split("@")[0]);
-                cv.put("isAgree", 0);
+                cv.put("isAgree", Apply.STATUS_UNAGREE);
                 SQLiteHelper.getInstance(getActivity()).insert(AppConstants.TABLE_APPLY, cv);
-
             }
         }
     }

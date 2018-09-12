@@ -4,7 +4,7 @@ import android.app.NotificationManager;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.support.v4.app.FragmentTransaction;
+import android.support.v4.app.Fragment;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -14,6 +14,7 @@ import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.adapter.MessageAdapter;
@@ -23,6 +24,7 @@ import com.android.king.xmppdemo.entity.MessageBean;
 import com.android.king.xmppdemo.event.ChatEvent;
 import com.android.king.xmppdemo.event.ReadEvent;
 import com.android.king.xmppdemo.event.SendMsgEvent;
+import com.android.king.xmppdemo.fragment.PanelFragment;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.listener.OnTipDialogListener;
 import com.android.king.xmppdemo.net.NetworkExecutor;
@@ -49,12 +51,16 @@ import io.github.rockerhieu.emojicon.emoji.Emojicon;
  * @since 2018-09-11
  * @author king
  */
-public class MessageActivity extends BaseActivity implements AdapterView.OnItemLongClickListener, View.OnClickListener, EmojiconGridFragment.OnEmojiconClickedListener, EmojiconsFragment.OnEmojiconBackspaceClickedListener {
+public class MessageActivity extends BaseActivity implements AdapterView.OnItemLongClickListener,
+        View.OnClickListener, EmojiconGridFragment.OnEmojiconClickedListener,
+        EmojiconsFragment.OnEmojiconBackspaceClickedListener, PanelFragment.OnPanelItemClickListener {
 
 
     private static final int TYPE_EMOJI = 0;
     private static final int TYPE_ADD = 1;
 
+    private boolean isEmojiShow = false;
+    private boolean isAddShow = false;
     private ListView lvMessage;
     private TextView tvEmpty;
     private MessageAdapter messageAdapter;
@@ -72,7 +78,7 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
 
     private View panelRoot;
 
-    private EmojiconsFragment emojiFragment;
+    private Fragment addFragment;
 
     @Override
     protected int getLayoutId() {
@@ -95,10 +101,13 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
         ivAudio.setOnClickListener(this);
         ivEmoji.setOnClickListener(this);
         tvSend.setOnClickListener(this);
+
+        addFragment = PanelFragment.newInstance();
+
         etContent.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                if (event.getAction() == MotionEvent.ACTION_UP) {
                     hidePanel(false);
                 }
                 return false;
@@ -232,14 +241,31 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
                 etContent.setText("");
                 break;
             case R.id.iv_emoji:
+                if(isAddShow){
+                    ivEmoji.setImageResource(R.drawable.ic_keyboard);
+                    showPanel(TYPE_EMOJI);
+                    return;
+                }
                 if (panelRoot.isShown()) {
+                    ivEmoji.setImageResource(R.drawable.ic_emoji);
                     hidePanel(true);
                 } else {
+                    ivEmoji.setImageResource(R.drawable.ic_keyboard);
                     showPanel(TYPE_EMOJI);
                 }
                 break;
             case R.id.iv_add:
-
+                if(isEmojiShow){
+                    ivEmoji.setImageResource(R.drawable.ic_emoji);
+                    showPanel(TYPE_ADD);
+                    return;
+                }
+                if (panelRoot.isShown()) {
+                    hidePanel(true);
+                } else {
+                    ivEmoji.setImageResource(R.drawable.ic_emoji);
+                    showPanel(TYPE_ADD);
+                }
                 break;
             case R.id.iv_audio:
 
@@ -287,6 +313,8 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
     }
 
     private void hidePanel(boolean showKeyBoard) {
+        isEmojiShow = false;
+        isAddShow = false;
         if (panelRoot.isShown()) {
             if (showKeyBoard) {
                 panelRoot.setVisibility(View.GONE);
@@ -297,34 +325,41 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
         }
     }
 
+    /**
+     * 显示底部工具栏
+     *
+     * @param type
+     */
     private void showPanel(int type) {
         int panelHeight = SoftInputUtil.getKeyboardHeight(this);
         hideSoftInput();
         panelRoot.getLayoutParams().height = panelHeight;
         panelRoot.setVisibility(View.VISIBLE);
-        if (type == TYPE_EMOJI) {
+        if (type == TYPE_EMOJI) {//emoji表情
             showEmoji();
-        } else {
-
+        } else if (type == TYPE_ADD) { //功能栏
+            showAdd();
         }
 
     }
 
-    private FragmentTransaction transaction;
-
+    /**
+     * 显示emoji表情
+     */
     private void showEmoji() {
-        transaction = getSupportFragmentManager().beginTransaction();
-        if (emojiFragment == null) {
-            emojiFragment = EmojiconsFragment.newInstance(false);
-            if (!emojiFragment.isAdded()) {
-                transaction.add(R.id.panel_root, emojiFragment).commit();
-            }
-        } else {
-            transaction.show(emojiFragment).commit();
-        }
-
+        getSupportFragmentManager().beginTransaction().replace(R.id.panel_root, EmojiconsFragment.newInstance(false)).commit();
+        isEmojiShow = true;
+        isAddShow = false;
     }
 
+    /**
+     * 显示功能栏
+     */
+    private void showAdd() {
+        getSupportFragmentManager().beginTransaction().replace(R.id.panel_root, addFragment).commit();
+        isAddShow = true;
+        isEmojiShow = false;
+    }
 
     /**
      * 接收到消息
@@ -399,4 +434,20 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
         }
     }
 
+    @Override
+    public void onPanelItemClick(int position) {
+        switch (position) {
+            case 0:
+                //图片
+                Toast.makeText(this, "图片", Toast.LENGTH_SHORT).show();
+                break;
+            case 1:
+
+                break;
+            case 2:
+                break;
+            case 3:
+                break;
+        }
+    }
 }

@@ -9,12 +9,16 @@ import java.io.Serializable;
  */
 public class Apply implements Serializable {
 
-    private User user;
-    private boolean isAgree;
+    public static final int STATUS_AGREED = 0;
+    public static final int STATUS_IGNORE = -1;
+    public static final int STATUS_UNAGREE = 1;
 
-    public Apply(User user, boolean isAgree) {
+    private User user;
+    private int status;
+
+    public Apply(User user, int status) {
         this.user = user;
-        this.isAgree = isAgree;
+        this.status = status;
     }
 
     public Apply() {
@@ -28,11 +32,11 @@ public class Apply implements Serializable {
         this.user = user;
     }
 
-    public boolean isAgree() {
-        return isAgree;
+    public int getStatus() {
+        return status;
     }
 
-    public void setAgree(boolean agree) {
-        isAgree = agree;
+    public void setStatus(int status) {
+        this.status = status;
     }
 }

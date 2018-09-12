@@ -242,6 +242,7 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
         chatBean.setTarget(to);
         chatBean.setTime(time);
         chatBean.setMessage(content);
+        chatBean.setUnreadCount(0);
         chatBean.setMsgDb(message.getMsgDb());
         int index = chatAdapter.isExist(to);
         if (index < 0) {
@@ -330,13 +331,7 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
                 String from = chatBean.getTarget();
                 String message = chatBean.getMessage();
                 long time = chatBean.getTime();
-
-                int unreadCount = 0;
-                Cursor cursor = SQLiteHelper.getInstance(getActivity()).rawQuery("select unread from " + AppConstants.TABLE_CHAT + " where fromUser=?", new String[]{from});
-                if (cursor.moveToFirst()) {
-                    unreadCount = cursor.getInt(cursor.getColumnIndex("unread"));
-                }
-                unreadCount += 1;
+                int unreadCount = chatBean.getUnreadCount();
                 ContentValues cv = new ContentValues();
                 cv.put("message", message);
                 cv.put("unread", unreadCount);
