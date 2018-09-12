@@ -594,7 +594,7 @@ public class XMPPHelper {
      * 心跳连接
      */
     public void addHeartBeat(PingFailedListener listener) {
-        PingManager.setDefaultPingInterval(10000);//10秒心跳连接
+        PingManager.setDefaultPingInterval(20000);//20秒心跳连接，不建议设置太短
         PingManager.getInstanceFor(xmppConnection).registerPingFailedListener(listener);
     }
 }
