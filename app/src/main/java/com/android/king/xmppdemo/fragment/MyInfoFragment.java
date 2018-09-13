@@ -2,7 +2,6 @@ package com.android.king.xmppdemo.fragment;
 
 import android.Manifest;
 import android.content.Intent;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -110,10 +109,10 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
         imagePicker.setSaveRectangle(true); //是否按矩形区域保存
         imagePicker.setMultiMode(false);
         imagePicker.setStyle(CropImageView.Style.RECTANGLE);  //裁剪框的形状
-        imagePicker.setFocusWidth(800);   //裁剪框的宽度。单位像素（圆形自动取宽高最小值）
-        imagePicker.setFocusHeight(800);  //裁剪框的高度。单位像素（圆形自动取宽高最小值）
-        imagePicker.setOutPutX(800);//保存文件的宽度。单位像素
-        imagePicker.setOutPutY(800);//保存文件的高度。单位像素
+        imagePicker.setFocusWidth(500);   //裁剪框的宽度。单位像素（圆形自动取宽高最小值）
+        imagePicker.setFocusHeight(500);  //裁剪框的高度。单位像素（圆形自动取宽高最小值）
+        imagePicker.setOutPutX(500);//保存文件的宽度。单位像素
+        imagePicker.setOutPutY(500);//保存文件的高度。单位像素
     }
 
     @Override
@@ -129,6 +128,7 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
             public void onFinish(User userInfo, Exception e) {
                 if (e != null) {
                     Logger.e(e);
+                    showToast("获取用户信息失败");
                     return;
                 }
                 if (userInfo != null) {
@@ -351,7 +351,6 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
                 })
                 .setTitleColor(ContextCompat.getColor(getActivity(), R.color.blue))
                 .setCanceledOnTouchOutside(false)
-                .setInputHeight(100)
                 .setRadius(15)
                 .setInputCounter(50, new OnInputCounterChangeListener() {
                     @Override
@@ -455,7 +454,7 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
                 ArrayList<ImageItem> images = (ArrayList<ImageItem>) data.getSerializableExtra(ImagePicker.EXTRA_RESULT_ITEMS);
                 if (images.size() == 1) {
                     String path = images.get(0).path;
-                    ivAvatar.setImageBitmap(BitmapFactory.decodeFile(path));
+                    ImageUtil.showImage(getActivity(),ivAvatar, path);
                     uploadAvatar(path);
                 }
             } else {

@@ -1,7 +1,5 @@
 package com.android.king.xmppdemo.xmpp;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.text.TextUtils;
 
 import com.android.king.xmppdemo.config.AppConstants;
@@ -58,7 +56,6 @@ import org.jxmpp.jid.parts.Localpart;
 import org.jxmpp.jid.parts.Resourcepart;
 import org.jxmpp.stringprep.XmppStringprepException;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -82,6 +79,7 @@ public class XMPPHelper {
 
     //    public static final String SERVER_DOMAIN = "10.0.1.90";
     public static final String SERVER_DOMAIN = "60.205.185.28";
+    public static final int SERVER_PORT = 5222;
 
     private static XMPPHelper mInstance = null;
 
@@ -134,7 +132,7 @@ public class XMPPHelper {
             builder.setXmppDomain(serviceName);
             builder.setHostnameVerifier(verifier);
             builder.setHostAddress(addr);
-            builder.setPort(5222);
+            builder.setPort(SERVER_PORT);
             builder.setSendPresence(true);//若接收不了离线消息，设置为false
             builder.setConnectTimeout(15000);
             builder.setCompressionEnabled(true);
@@ -232,14 +230,22 @@ public class XMPPHelper {
     }
 
 
+    /**
+     * 修改用户头像
+     *
+     * @param f
+     */
     public void changeImage(File f) throws XMPPException, IOException, SmackException.NotConnectedException, InterruptedException, SmackException.NoResponseException {
-        VCard vcard = new VCard();
-        vcard.load(xmppConnection);
+        VCard vcard = VCardManager.getInstanceFor(xmppConnection).loadVCard();
         byte[] bytes = FileUtil.getFileBytes(f);
         String encodedImage = Base64.encodeToString(bytes);
-        vcard.setAvatar(encodedImage,"image/png");
+        String mineType = "image/png";
+        if (f.getAbsolutePath().endsWith("jpg") || f.getAbsolutePath().endsWith("jpeg")) {
+            mineType = "image/jpeg";
+        }
+        vcard.setAvatar(encodedImage, mineType);
 
-        vcard.setField("PHOTO", "<TYPE>image/png</TYPE><BINVAL>"
+        vcard.setField("PHOTO", "<TYPE>" + mineType + "</TYPE><BINVAL>"
                 + encodedImage + "</BINVAL>", true);
 
         VCardManager.getInstanceFor(xmppConnection).saveVCard(vcard);
@@ -453,7 +459,7 @@ public class XMPPHelper {
                 User user = new User();
                 user.setAccount(entry.getJid().toString());
                 user.setNote(entry.getName());
-                user.setAvatar(getUserAvatar(entry.getJid().toString()));
+                user.setAvatar(getVcardAvatar(entry.getJid().toString()));
                 userList.add(user);
             }
         }
@@ -489,7 +495,7 @@ public class XMPPHelper {
             user.setAccount(account);
             user.setEmail(vCard.getEmailWork());
             user.setSign(vCard.getField("sign"));
-            user.setAvatar(vCard.getField("avatar"));
+            user.setAvatar(getVcardAvatar(account));
             String sex = vCard.getField("sex");
             if (!TextUtils.isEmpty(sex)) {
                 user.setSex(Integer.parseInt(sex));
@@ -502,57 +508,32 @@ public class XMPPHelper {
     }
 
     /**
-     * 获取用户头像链接
+     * 获取VCard中用户的头像并存储到本地缓存
      */
-    public String getUserAvatar(String account) {
-        if (isConnected() && !TextUtils.isEmpty(account)) {
-            if (!account.contains("@")) {
-                account = account + "@" + xmppConnection.getServiceName();
-            }
-            VCard vCard = null;
-            try {
-                vCard = VCardManager.getInstanceFor(xmppConnection).loadVCard(JidCreate.entityBareFrom(account));
-                String result = vCard.getField("avatar");
-
-                return result;
-            } catch (Exception e) {
-                Logger.e(e);
-            }
+    public String getVcardAvatar(String account) {
+        if (!account.contains("@")) {
+            account = account + "@" + xmppConnection.getServiceName();
         }
-        return null;
-    }
-
-
-    /**
-     * 获取VCard中用户的头像
-     * app中不适合用此种方式获取头像，因为获取的是byte字节流，不适合数据展示，特别容易内存溢出
-     * 所以我将头像上传至我自己的服务器，获取头像链接，保存到VCard中
-     * @deprecated
-     */
-    public Bitmap getVcardAvatar(String account) {
+        if (FileUtil.isAvatarExist(account)) {
+            return FileUtil.getAvatarCache(account);
+        }
         if (!isConnected() || TextUtils.isEmpty(account)) {
             return null;
         }
-        Bitmap ic = null;
         try {
-            if (!account.contains("@")) {
-                account = account + "@" + xmppConnection.getServiceName();
-            }
+
             VCard vcard = VCardManager.getInstanceFor(xmppConnection).loadVCard(JidCreate.entityBareFrom(account));
             if (vcard == null || vcard.getAvatar() == null) {
 
                 Logger.i("获取头像为空");
                 return null;
             }
-            ByteArrayInputStream bais = new ByteArrayInputStream(
-                    vcard.getAvatar());
-
-            ic = BitmapFactory.decodeStream(bais);
+            return FileUtil.saveAvatarToFile(vcard.getAvatar(), account + ".png");
 
         } catch (Exception e) {
             Logger.e(e);
         }
-        return ic;
+        return null;
     }
 
 

@@ -21,7 +21,6 @@ import com.android.king.xmppdemo.db.SQLiteHelper;
 import com.android.king.xmppdemo.entity.Apply;
 import com.android.king.xmppdemo.event.FriendEvent;
 import com.android.king.xmppdemo.event.ReconnectErrorEvent;
-import com.android.king.xmppdemo.net.NetworkExecutor;
 import com.android.king.xmppdemo.ui.LoginActivity;
 import com.android.king.xmppdemo.util.CommonUtil;
 import com.android.king.xmppdemo.util.Logger;
@@ -163,7 +162,6 @@ public class HomeFragment extends SupportFragment implements View.OnClickListene
                 tabMy.setSelected(true);
                 lastSelect = tabMy;
                 showHideFragment(mFragments[3], mFragments[prePosition]);
-                ((MyFragment) mFragments[3]).loadData();
                 prePosition = 3;
                 break;
         }

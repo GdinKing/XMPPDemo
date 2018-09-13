@@ -71,17 +71,21 @@ public class MyFragment extends SupportFragment implements View.OnClickListener 
         return v;
     }
 
+    private boolean isLoading = false;
+
 
     public void loadData() {
         final String account = BaseApplication.getCurrentLogin();
         NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<User>() {
             @Override
             public User onExecute() throws Exception {
+                isLoading = true;
                 return XMPPHelper.getInstance().getUserInfo(account);
             }
 
             @Override
             public void onFinish(User userInfo, Exception e) {
+                isLoading = false;
                 if (e != null) {
                     Logger.e(e);
                     return;
@@ -122,7 +126,7 @@ public class MyFragment extends SupportFragment implements View.OnClickListener 
             }
             if (avatar != null) {
                 ImageUtil.showImage(getActivity(), ivAvatar, user.getAvatar());
-            }else{
+            } else {
                 Logger.i("头像为空");
             }
         } else {
@@ -140,7 +144,7 @@ public class MyFragment extends SupportFragment implements View.OnClickListener 
                 ((HomeFragment) getParentFragment()).start(SettingFragment.newInstance());
                 break;
             case R.id.ll_my_info:
-                if (user == null) {
+                if (user == null || isLoading) {
                     return;
                 }
                 ((HomeFragment) getParentFragment()).start(MyInfoFragment.newInstance(user));
