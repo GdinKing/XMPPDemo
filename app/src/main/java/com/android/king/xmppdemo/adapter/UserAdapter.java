@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.entity.User;
+import com.android.king.xmppdemo.util.ImageUtil;
 
 import java.util.List;
 
@@ -68,7 +69,7 @@ public class UserAdapter extends BaseAdapter {
         holder.tvName.setText(user.getName());
         holder.tvAccount.setText("账号：" + user.getAccount());
         if (user.getAvatar() != null) {
-            holder.ivAvatar.setImageBitmap(user.getAvatar());
+            ImageUtil.showImage(mContext, holder.ivAvatar, user.getAvatar());
         } else {
             holder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
         }

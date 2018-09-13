@@ -66,6 +66,7 @@ public class SettingFragment extends BaseFragment implements View.OnClickListene
                 showToast("退出成功");
                 startActivity(new Intent(getActivity(), LoginActivity.class));
                 pop();
+                getActivity().finish();
             }
         });
     }

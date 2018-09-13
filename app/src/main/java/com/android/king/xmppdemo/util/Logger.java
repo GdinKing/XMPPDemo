@@ -32,7 +32,12 @@ public class Logger {
 
     public static void e(Throwable e) {
         if (DEBUG && e != null) {
-            Log.e(TAG, e.getCause().toString(), e);
+            if (e.getCause() != null) {
+
+                Log.e(TAG, e.getCause().toString(), e);
+            } else {
+                Log.e(TAG, "", e);
+            }
         }
     }
 }

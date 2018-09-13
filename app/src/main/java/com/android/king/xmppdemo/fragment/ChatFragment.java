@@ -171,7 +171,6 @@ public class ChatFragment extends BaseFragment implements AdapterView.OnItemClic
                     return;
                 }
                 for (Message message : offlineMessage) {
-                    Logger.i("离线：" + message.toString());
                     ChatBean bean = new ChatBean();
                     bean.setTitle(message.getFrom().toString().split("@")[0]);
                     bean.setTarget(message.getFrom().toString());

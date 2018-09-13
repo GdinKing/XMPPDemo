@@ -11,6 +11,7 @@ import android.widget.TextView;
 
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.entity.User;
+import com.android.king.xmppdemo.util.ImageUtil;
 
 import java.util.List;
 
@@ -68,7 +69,7 @@ public class FriendAdapter extends BaseAdapter {
         User user = dataList.get(position);
         holder.tvName.setText(!TextUtils.isEmpty(user.getNote()) ? user.getNote() : user.getAccount().split("@")[0]);
         if (user.getAvatar() != null) {
-            holder.ivAvatar.setImageBitmap(user.getAvatar());
+            ImageUtil.showImage(mContext, holder.ivAvatar, user.getAvatar());
         } else {
             holder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
         }

@@ -2,7 +2,7 @@ package com.android.king.xmppdemo.fragment;
 
 import android.Manifest;
 import android.content.Intent;
-import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -12,13 +12,14 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.entity.User;
+import com.android.king.xmppdemo.event.UpdateInfoEvent;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
 import com.android.king.xmppdemo.util.GlideUtil;
+import com.android.king.xmppdemo.util.ImageUtil;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
 import com.lzy.imagepicker.ImagePicker;
@@ -36,12 +37,13 @@ import com.mylhyl.circledialog.res.values.CircleDimen;
 import com.mylhyl.circledialog.view.listener.OnInputClickListener;
 import com.mylhyl.circledialog.view.listener.OnInputCounterChangeListener;
 
+import org.greenrobot.eventbus.EventBus;
+
+import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 
 import me.weyye.hipermission.HiPermission;
 import me.weyye.hipermission.PermissionCallback;
-import me.weyye.hipermission.PermissionItem;
 
 
 /**
@@ -134,7 +136,7 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
                     String userAccount = userInfo.getAccount().split("@")[0];
                     String nick = userInfo.getNickName();
                     String userNote = userInfo.getNote();
-                    Bitmap avatar = userInfo.getAvatar();
+                    String avatar = userInfo.getAvatar();
                     int sex = userInfo.getSex();
 
                     tvAccount.setText(userAccount);
@@ -154,7 +156,7 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
                     tvNick.setText(!TextUtils.isEmpty(nick) ? nick : userAccount.split("@")[0]);
 
                     if (avatar != null) {
-                        ivAvatar.setImageBitmap(avatar);
+                        ImageUtil.showImage(getActivity(), ivAvatar, user.getAvatar());
                     }
                 } else {
                     tvAccount.setText(user.getAccount());
@@ -188,7 +190,7 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
                     @Override
                     public void onGuarantee(String permission, int position) {
                         Intent intent = new Intent(getActivity(), ImageGridActivity.class);
-                        intent.putExtra(ImageGridActivity.EXTRAS_TAKE_PICKERS,true); // 是否是直接打开相机
+                        intent.putExtra(ImageGridActivity.EXTRAS_TAKE_PICKERS, true); // 是否是直接打开相机
                         startActivityForResult(intent, 100);
                     }
                 });
@@ -238,7 +240,8 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
                         if (position == 0) {
                             checkCameraPermission();
                         } else if (position == 1) {
-                            showToast("从相册选取");
+                            Intent intent = new Intent(getActivity(), ImageGridActivity.class);
+                            startActivityForResult(intent, 100);
                         }
                     }
                 }).configItems(new ConfigItems() {
@@ -275,10 +278,13 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
                     @Override
                     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                         if (position == 0) {
-                            showToast("男");
+                            user.setSex(0);
+                            tvSex.setText("男");
                         } else if (position == 1) {
-                            showToast("女");
+                            user.setSex(1);
+                            tvSex.setText("女");
                         }
+                        updateInfo(user,2);
                     }
                 })
                 .configItems(new ConfigItems() {
@@ -324,6 +330,8 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
                             return;
                         }
                         tvNick.setText(text);
+                        user.setNickName(text);
+                        updateInfo(user,1);
                     }
                 })
                 .setNegative("取消", null)
@@ -359,11 +367,84 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
                             return;
                         }
                         tvSign.setText(text);
+                        user.setSign(text);
+                        updateInfo(user,0);
                     }
                 })
                 .setNegative("取消", null)
                 .show();
     }
+
+
+    /**
+     * 上传头像
+     *
+     * @param filePath
+     */
+    private void uploadAvatar(final String filePath) {
+        showProgress("上传中");
+        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
+            @Override
+            public Object onExecute() throws Exception {
+                File f = new File(filePath);
+                if (!f.exists()) {
+                    throw new RuntimeException("图片不存在");
+                }
+                Logger.i(filePath);
+                XMPPHelper.getInstance().changeImage(f);
+                return null;
+            }
+
+            @Override
+            public void onFinish(Object result, Exception e) {
+                dismissProgress();
+                if (e != null) {
+                    Logger.e(e);
+                    showToast("上传头像失败");
+                    return;
+                }
+                showToast("上传成功");
+                user.setAvatar(filePath);
+                EventBus.getDefault().post(new UpdateInfoEvent(user));
+            }
+        });
+
+    }
+
+
+    /**
+     * 修改用户信息
+
+     */
+    private void updateInfo(final User userInfo, final int type) {
+        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
+            @Override
+            public Object onExecute() throws Exception {
+
+                XMPPHelper.getInstance().saveUserInfo(userInfo);
+                return null;
+            }
+
+            @Override
+            public void onFinish(Object result, Exception e) {
+                dismissProgress();
+                if (e != null) {
+                    if(type==0) {
+                        showToast("修改个性签名失败");
+                    }else if(type==1){
+                        showToast("修改昵称失败");
+                    }else if(type==2){
+                        showToast("修改性别失败");
+                    }
+                    return;
+                }
+                showToast("修改成功");
+                EventBus.getDefault().post(new UpdateInfoEvent(user));
+            }
+        });
+
+    }
+
 
 
     @Override
@@ -372,7 +453,11 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
         if (resultCode == ImagePicker.RESULT_CODE_ITEMS) {
             if (data != null && requestCode == 100) {
                 ArrayList<ImageItem> images = (ArrayList<ImageItem>) data.getSerializableExtra(ImagePicker.EXTRA_RESULT_ITEMS);
-
+                if (images.size() == 1) {
+                    String path = images.get(0).path;
+                    ivAvatar.setImageBitmap(BitmapFactory.decodeFile(path));
+                    uploadAvatar(path);
+                }
             } else {
 
             }

@@ -1,7 +1,5 @@
 package com.android.king.xmppdemo.entity;
 
-import android.graphics.Bitmap;
-
 import java.io.Serializable;
 
 /***
@@ -15,7 +13,7 @@ public class User implements Serializable {
     private String name;
     private String note;
     private String nickName;
-    private Bitmap avatar;
+    private String avatar;
     private String account;
     private String group;
     private String email;
@@ -30,11 +28,11 @@ public class User implements Serializable {
         this.name = name;
     }
 
-    public Bitmap getAvatar() {
+    public String getAvatar() {
         return avatar;
     }
 
-    public void setAvatar(Bitmap avatar) {
+    public void setAvatar(String avatar) {
         this.avatar = avatar;
     }
 

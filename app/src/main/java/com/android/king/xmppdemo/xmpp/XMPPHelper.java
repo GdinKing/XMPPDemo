@@ -9,6 +9,7 @@ import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.event.FriendEvent;
 import com.android.king.xmppdemo.listener.IncomingMsgListener;
 import com.android.king.xmppdemo.listener.OnInvitationListener;
+import com.android.king.xmppdemo.util.FileUtil;
 import com.android.king.xmppdemo.util.Logger;
 
 import org.greenrobot.eventbus.EventBus;
@@ -32,6 +33,7 @@ import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
+import org.jivesoftware.smack.util.stringencoder.Base64;
 import org.jivesoftware.smackx.iqregister.AccountManager;
 import org.jivesoftware.smackx.muc.HostedRoom;
 import org.jivesoftware.smackx.muc.MucEnterConfiguration;
@@ -57,6 +59,7 @@ import org.jxmpp.jid.parts.Resourcepart;
 import org.jxmpp.stringprep.XmppStringprepException;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -228,6 +231,21 @@ public class XMPPHelper {
         }
     }
 
+
+    public void changeImage(File f) throws XMPPException, IOException, SmackException.NotConnectedException, InterruptedException, SmackException.NoResponseException {
+        VCard vcard = new VCard();
+        vcard.load(xmppConnection);
+        byte[] bytes = FileUtil.getFileBytes(f);
+        String encodedImage = Base64.encodeToString(bytes);
+        vcard.setAvatar(encodedImage,"image/png");
+
+        vcard.setField("PHOTO", "<TYPE>image/png</TYPE><BINVAL>"
+                + encodedImage + "</BINVAL>", true);
+
+        VCardManager.getInstanceFor(xmppConnection).saveVCard(vcard);
+    }
+
+
     /**
      * 是否登录
      *
@@ -295,12 +313,13 @@ public class XMPPHelper {
             return;
         }
         VCard vCard = new VCard();
-        vCard.setNickName(user.getName());
+        vCard.setNickName(user.getNickName());
         vCard.setFirstName(user.getName());
         vCard.setEmailWork(user.getEmail());
         vCard.setJabberId(user.getAccount());
         vCard.setField("sex", String.valueOf(user.getSex()));
         vCard.setField("sign", user.getSign());
+        vCard.setField("avatar", user.getAvatar());
         VCardManager.getInstanceFor(xmppConnection).saveVCard(vCard);
     }
 
@@ -413,7 +432,8 @@ public class XMPPHelper {
 
     /**
      * 获取所有好友
-     * 真要搭建即时通讯系统，是不建议这种获取好友的方式的，因为数据不全而且查询麻烦，自己写个Web服务连接数据库进行查询会更适合
+     * 真要搭建即时通讯app，是不建议这种获取好友的方式的，因为数据不全而且查询麻烦，自己写个Web服务连接数据库进行查询会更适合
+     * 或者开发个openfire插件来管理好友信息
      *
      * @return
      */
@@ -438,24 +458,6 @@ public class XMPPHelper {
             }
         }
         return userList;
-    }
-
-    /**
-     * 获取用户的vcard信息
-     *
-     * @param account
-     * @return
-     * @throws XMPPException
-     */
-    public VCard getUserVCard(String account) throws XMPPException, XmppStringprepException, SmackException.NotConnectedException, InterruptedException, SmackException.NoResponseException {
-        if (isConnected() && !TextUtils.isEmpty(account)) {
-            if (!account.contains("@")) {
-                account = account + "@" + xmppConnection.getServiceName();
-            }
-            VCard vCard = VCardManager.getInstanceFor(xmppConnection).loadVCard(JidCreate.entityBareFrom(account));
-            return vCard;
-        }
-        return null;
     }
 
     /**
@@ -487,7 +489,7 @@ public class XMPPHelper {
             user.setAccount(account);
             user.setEmail(vCard.getEmailWork());
             user.setSign(vCard.getField("sign"));
-            user.setAvatar(getUserAvatar(account));
+            user.setAvatar(vCard.getField("avatar"));
             String sex = vCard.getField("sex");
             if (!TextUtils.isEmpty(sex)) {
                 user.setSex(Integer.parseInt(sex));
@@ -500,9 +502,34 @@ public class XMPPHelper {
     }
 
     /**
-     * 获取用户头像信息
+     * 获取用户头像链接
      */
-    public Bitmap getUserAvatar(String account) {
+    public String getUserAvatar(String account) {
+        if (isConnected() && !TextUtils.isEmpty(account)) {
+            if (!account.contains("@")) {
+                account = account + "@" + xmppConnection.getServiceName();
+            }
+            VCard vCard = null;
+            try {
+                vCard = VCardManager.getInstanceFor(xmppConnection).loadVCard(JidCreate.entityBareFrom(account));
+                String result = vCard.getField("avatar");
+
+                return result;
+            } catch (Exception e) {
+                Logger.e(e);
+            }
+        }
+        return null;
+    }
+
+
+    /**
+     * 获取VCard中用户的头像
+     * app中不适合用此种方式获取头像，因为获取的是byte字节流，不适合数据展示，特别容易内存溢出
+     * 所以我将头像上传至我自己的服务器，获取头像链接，保存到VCard中
+     * @deprecated
+     */
+    public Bitmap getVcardAvatar(String account) {
         if (!isConnected() || TextUtils.isEmpty(account)) {
             return null;
         }
@@ -513,6 +540,8 @@ public class XMPPHelper {
             }
             VCard vcard = VCardManager.getInstanceFor(xmppConnection).loadVCard(JidCreate.entityBareFrom(account));
             if (vcard == null || vcard.getAvatar() == null) {
+
+                Logger.i("获取头像为空");
                 return null;
             }
             ByteArrayInputStream bais = new ByteArrayInputStream(
@@ -525,6 +554,7 @@ public class XMPPHelper {
         }
         return ic;
     }
+
 
     /**
      * 发消息

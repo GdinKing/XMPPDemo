@@ -6,11 +6,8 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.widget.Toast;
 
-import com.android.king.xmppdemo.BaseApplication;
 import com.android.king.xmppdemo.config.AppConstants;
-import com.android.king.xmppdemo.event.FriendEvent;
 import com.android.king.xmppdemo.event.ReconnectErrorEvent;
-import com.android.king.xmppdemo.listener.IncomingMsgListener;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
 import com.android.king.xmppdemo.util.Logger;
@@ -18,25 +15,12 @@ import com.android.king.xmppdemo.util.Logger;
 import org.greenrobot.eventbus.EventBus;
 import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.ConnectionListener;
-import org.jivesoftware.smack.ReconnectionManager;
 import org.jivesoftware.smack.SmackException;
-import org.jivesoftware.smack.StanzaListener;
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.chat2.ChatManager;
-import org.jivesoftware.smack.filter.AndFilter;
-import org.jivesoftware.smack.filter.StanzaFilter;
-import org.jivesoftware.smack.filter.StanzaTypeFilter;
 import org.jivesoftware.smack.packet.Presence;
-import org.jivesoftware.smack.packet.Stanza;
-import org.jivesoftware.smackx.offline.OfflineMessageManager;
 import org.jivesoftware.smackx.ping.PingFailedListener;
 import org.jivesoftware.smackx.ping.PingManager;
-import org.jivesoftware.smackx.receipts.DeliveryReceiptManager;
-import org.jxmpp.jid.Jid;
-import org.jxmpp.jid.impl.JidCreate;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -177,7 +161,8 @@ public class XMPPService extends Service {
             });
             try {
                 Logger.i("心跳连接:" + new Date().toLocaleString());
-                PingManager.getInstanceFor(connection).pingAsync(connection.getUser());//ping自己。让服务器认为你不是空闲连接
+                PingManager.getInstanceFor(connection).pingServerIfNecessary();
+                XMPPHelper.getInstance().changeStatus(AppConstants.StanzaStatus.AVAILABLE);
             } catch (Exception e) {
                 Logger.e(e);
             }

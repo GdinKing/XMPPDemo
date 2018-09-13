@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.entity.Apply;
+import com.android.king.xmppdemo.util.ImageUtil;
 
 import java.util.List;
 
@@ -94,7 +95,7 @@ public class NewApplyAdapter extends BaseAdapter {
             }
         });
         if (apply.getUser().getAvatar() != null) {
-            holder.ivAvatar.setImageBitmap(apply.getUser().getAvatar());
+            ImageUtil.showImage(mContext, holder.ivAvatar, apply.getUser().getAvatar());
         } else {
             holder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
         }

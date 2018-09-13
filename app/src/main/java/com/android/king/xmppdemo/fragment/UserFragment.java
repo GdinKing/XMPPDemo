@@ -1,7 +1,6 @@
 package com.android.king.xmppdemo.fragment;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -15,6 +14,7 @@ import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
 import com.android.king.xmppdemo.ui.MessageActivity;
+import com.android.king.xmppdemo.util.ImageUtil;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
 
@@ -85,7 +85,7 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
                     String userAccount = userInfo.getAccount().split("@")[0];
                     String nick = userInfo.getNickName();
                     String userNote = userInfo.getNote();
-                    Bitmap avatar = userInfo.getAvatar();
+                    String avatar = userInfo.getAvatar();
                     int sex = userInfo.getSex();
 
                     tvAccount.setText("账号：" + userAccount);
@@ -106,7 +106,7 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
                     tvNick.setText("昵称：" + (!TextUtils.isEmpty(nick) ? nick : userAccount));
 
                     if (avatar != null) {
-                        ivAvatar.setImageBitmap(avatar);
+                        ImageUtil.showImage(getActivity(), ivAvatar, avatar);
                     }
                 } else {
                     tvAccount.setText("账号：" + account.split("@")[0]);
