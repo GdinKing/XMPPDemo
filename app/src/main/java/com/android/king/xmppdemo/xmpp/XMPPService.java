@@ -2,12 +2,17 @@ package com.android.king.xmppdemo.xmpp;
 
 import android.app.Service;
 import android.content.Intent;
+import android.os.Binder;
 import android.os.IBinder;
 import android.widget.Toast;
 
+import com.android.king.xmppdemo.BaseApplication;
+import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.event.FriendEvent;
 import com.android.king.xmppdemo.event.ReconnectErrorEvent;
 import com.android.king.xmppdemo.listener.IncomingMsgListener;
+import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
+import com.android.king.xmppdemo.net.NetworkExecutor;
 import com.android.king.xmppdemo.util.Logger;
 
 import org.greenrobot.eventbus.EventBus;
@@ -25,38 +30,52 @@ import org.jivesoftware.smack.filter.StanzaTypeFilter;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smackx.offline.OfflineMessageManager;
+import org.jivesoftware.smackx.ping.PingFailedListener;
+import org.jivesoftware.smackx.ping.PingManager;
 import org.jivesoftware.smackx.receipts.DeliveryReceiptManager;
+import org.jxmpp.jid.Jid;
+import org.jxmpp.jid.impl.JidCreate;
 
 import java.io.IOException;
+import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /***
- * 名称：
- * 描述：
- * 最近修改时间：2018年09月04日 14:03分
+ * 保持XMPP连接的服务
+ * 包含发送心跳和断线重连
  * @since 2018-09-04
  * @author king
  */
 public class XMPPService extends Service {
 
 
+    private Timer timer;
+
     public static AbstractXMPPConnection connection = null;
 
     private ConnectionListener connectionListener;
 
     @Override
-    public IBinder onBind(Intent arg0) {
-        return null;
+    public IBinder onBind(Intent intent) {
+        return myBinder;
     }
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
+    public class MyBinder extends Binder {
 
+        public XMPPService getService() {
+            return XMPPService.this;
+        }
     }
+
+    private MyBinder myBinder = new MyBinder();
+
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Logger.i("服务启动了");
         connection = XMPPHelper.getInstance().getConnection();
+
         connectionListener = new ConnectionListener() {
 
             @Override
@@ -111,49 +130,88 @@ public class XMPPService extends Service {
             public void reconnectionFailed(Exception e) {
                 Logger.i("来自连接监听,重连失败");
                 Logger.e(e);
-                connection.disconnect();
-                try {
-                    Thread.sleep(1500);
-                    connection.connect();
-                } catch (Exception e1) {
-                    e1.printStackTrace();
-                }
+                NetworkExecutor.getInstance().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            XMPPHelper.getInstance().reconnect();
+                        } catch (Exception e1) {
+                            Logger.e(e1);
+                        }
+                    }
+                });
+
             }
         };
         connection.addConnectionListener(connectionListener);
 
+        try {
+            timer = new Timer();
+            timer.schedule(new HeartBeatTask(), AppConstants.HEART_BEAT, AppConstants.HEART_BEAT);
+        } catch (Exception e) {
+
+        }
 
         return START_STICKY;
     }
 
 
-//    private void reconnect() {
-//        final String account = SPUtil.getString(this, AppConstants.SP_KEY_LOGIN_ACCOUNT);
-//        final String password = SPUtil.getString(this, AppConstants.SP_KEY_LOGIN_PASSWORD);
-//        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<Void>() {
-//            @Override
-//            public Void onExecute() throws Exception {
-//                XMPPHelper.getInstance().login(account, password, CommonUtil.getDeviceId(getApplication()));
-//                return null;
-//            }
-//
-//            @Override
-//            public void onFinish(Void result, Exception e) {
-//                if (e != null) {
-//                    Logger.e(e);
-//                    EventBus.getDefault().post(new ReconnectErrorEvent());
-//                    return;
-//                }
-//            }
-//        });
-//
-//
-//    }
+    /**
+     * 心跳连接
+     */
+    private class HeartBeatTask extends TimerTask {
+        @Override
+        public void run() {
+            if (connection == null) {
+                return;
+            }
+            if (!connection.isConnected()) {
+                reconnect();
+                return;
+            }
+            PingManager.getInstanceFor(connection).registerPingFailedListener(new PingFailedListener() {
+                @Override
+                public void pingFailed() {
+                    reconnect();
+                }
+            });
+            try {
+                Logger.i("心跳连接:" + new Date().toLocaleString());
+                PingManager.getInstanceFor(connection).pingAsync(connection.getUser());//ping自己。让服务器认为你不是空闲连接
+            } catch (Exception e) {
+                Logger.e(e);
+            }
+        }
+    }
 
 
     @Override
     public void onDestroy() {
         Logger.i("XMPPService结束了");
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
         super.onDestroy();
+    }
+
+    private void reconnect() {
+        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
+            @Override
+            public Object onExecute() throws Exception {
+                XMPPHelper.getInstance().reconnect();
+                return null;
+            }
+
+            @Override
+            public void onFinish(Object result, Exception e) {
+                if (e != null) {
+                    Logger.e(e);
+                    //退出app
+                    System.exit(-1);
+                }
+            }
+        });
+
     }
 }

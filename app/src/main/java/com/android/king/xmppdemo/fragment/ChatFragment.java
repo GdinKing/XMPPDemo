@@ -6,13 +6,9 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.adapter.ChatAdapter;
@@ -21,16 +17,19 @@ import com.android.king.xmppdemo.db.SQLiteHelper;
 import com.android.king.xmppdemo.entity.ChatBean;
 import com.android.king.xmppdemo.entity.MessageBean;
 import com.android.king.xmppdemo.event.ChatEvent;
+import com.android.king.xmppdemo.event.InviteEvent;
 import com.android.king.xmppdemo.event.MessageEvent;
 import com.android.king.xmppdemo.event.ReadEvent;
 import com.android.king.xmppdemo.event.SendMsgEvent;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
+import com.android.king.xmppdemo.listener.OnTipDialogListener;
 import com.android.king.xmppdemo.net.NetworkExecutor;
 import com.android.king.xmppdemo.ui.MessageActivity;
 import com.android.king.xmppdemo.util.CommonUtil;
 import com.android.king.xmppdemo.util.DisplayUtil;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.util.SPUtil;
+import com.android.king.xmppdemo.xmpp.XMPPHelper;
 import com.baoyz.swipemenulistview.SwipeMenu;
 import com.baoyz.swipemenulistview.SwipeMenuCreator;
 import com.baoyz.swipemenulistview.SwipeMenuItem;
@@ -39,17 +38,16 @@ import com.baoyz.swipemenulistview.SwipeMenuListView;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+import org.jivesoftware.smack.packet.Message;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import me.yokeyword.fragmentation.SupportFragment;
 
 
 /**
  * 会话列表界面
  */
-public class ChatFragment extends SupportFragment implements AdapterView.OnItemClickListener {
+public class ChatFragment extends BaseFragment implements AdapterView.OnItemClickListener {
 
     public static ChatFragment newInstance() {
         ChatFragment fragment = new ChatFragment();
@@ -60,31 +58,19 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
     private TextView tvEmpty;
     private ChatAdapter chatAdapter;
     private List<ChatBean> dataList = new ArrayList<>();
+    private List<Message> offlineMessage = new ArrayList<>();
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.fragment_chat, container, false);
+    protected int getContentView() {
+        return R.layout.fragment_chat;
+    }
 
-        lvChat = v.findViewById(R.id.lv_chat);
-        tvEmpty = v.findViewById(R.id.tv_empty);
+    @Override
+    protected void initView() {
+        lvChat = rootView.findViewById(R.id.lv_chat);
+        tvEmpty = rootView.findViewById(R.id.tv_empty);
 
         EventBus.getDefault().register(this);
-        initData();
-        loadData();
-        return v;
-    }
-
-
-    @Override
-    public void onStart() {
-        super.onStart();
-
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
 
     }
 
@@ -94,7 +80,8 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
         super.onDestroy();
     }
 
-    private void initData() {
+    @Override
+    protected void initData() {
         //创建侧滑菜单按钮
         SwipeMenuCreator creator = new SwipeMenuCreator() {
             @Override
@@ -127,24 +114,74 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
         lvChat.setOnMenuItemClickListener(new SwipeMenuListView.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(int position, SwipeMenu menu, int index) {
-                ChatBean bean = dataList.get(position);
                 switch (index) {
                     case 0:
-                        Toast.makeText(getActivity(), "置顶" + bean.getTarget(), Toast.LENGTH_SHORT).show();
                         dataList.add(0, dataList.get(position));
                         dataList.remove(position + 1);
-
+                        chatAdapter.refreshData(dataList);
+                        ((HomeFragment) getParentFragment()).setMessageBadge(chatAdapter.getTotalUnread());
                         break;
                     case 1:
-                        Toast.makeText(getActivity(), "删除" + bean.getTarget(), Toast.LENGTH_SHORT).show();
-                        SQLiteHelper.getInstance(getActivity()).delete(AppConstants.TABLE_CHAT, "fromUser=?", new String[]{bean.getTarget()});
-                        getActivity().deleteDatabase(bean.getMsgDb());
-                        dataList.remove(position);
+                        deleteTip(position);
                         break;
                 }
+                return false;
+            }
+        });
+        loadData();
+//        getOfflineMessage();  因为我的openfire装了一个离线消息的插件，所以这里不需要获取离线消息，插件会自动发送离线消息给客户端
+    }
+
+    private void deleteTip(final int position) {
+        showTip("是否删除该聊天？", new OnTipDialogListener() {
+            @Override
+            public void onPositiveClick() {
+                ChatBean bean = dataList.get(position);
+                SQLiteHelper.getInstance(getActivity()).delete(AppConstants.TABLE_CHAT, "fromUser=?", new String[]{bean.getTarget()});
+                SQLiteHelper.getInstance(getActivity()).deleteDatabase(getActivity(), bean.getMsgDb());
+                dataList.remove(position);
                 chatAdapter.refreshData(dataList);
                 ((HomeFragment) getParentFragment()).setMessageBadge(chatAdapter.getTotalUnread());
-                return false;
+            }
+
+            @Override
+            public void onNegativeClick() {
+
+            }
+        });
+    }
+
+    /**
+     * 获取离线消息
+     */
+    private void getOfflineMessage() {
+        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
+            @Override
+            public Object onExecute() throws Exception {
+                offlineMessage = XMPPHelper.getInstance().getOfflineMessage();
+                return null;
+            }
+
+            @Override
+            public void onFinish(Object result, Exception e) {
+
+                if (e != null) {
+                    XMPPHelper.getInstance().changeStatus(AppConstants.StanzaStatus.AVAILABLE);
+                    Logger.e(e);
+                    return;
+                }
+                for (Message message : offlineMessage) {
+                    Logger.i("离线：" + message.toString());
+                    ChatBean bean = new ChatBean();
+                    bean.setTitle(message.getFrom().toString().split("@")[0]);
+                    bean.setTarget(message.getFrom().toString());
+                    bean.setTime(System.currentTimeMillis());
+                    bean.setMessage(message.getBody());
+                    bean.setType(AppConstants.ChatType.SINGLE);
+                    bean.setMsgDb(message.getFrom().toString().split("@")[0]);
+
+                    EventBus.getDefault().post(new MessageEvent(bean));
+                }
             }
         });
     }
@@ -156,22 +193,15 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
             public Void onExecute() throws Exception {
                 Cursor cursor = SQLiteHelper.getInstance(getActivity()).rawQuery("select * from " + AppConstants.TABLE_CHAT, null);
                 while (cursor.moveToNext()) {
-                    int id = cursor.getInt(cursor.getColumnIndex("id"));
-                    int unreadCount = cursor.getInt(cursor.getColumnIndex("unread"));
-                    int type = cursor.getInt(cursor.getColumnIndex("type"));
-                    String from = cursor.getString(cursor.getColumnIndex("fromUser"));
-                    String message = cursor.getString(cursor.getColumnIndex("message"));
-                    String msgDb = cursor.getString(cursor.getColumnIndex("msgDb"));
-                    long time = cursor.getLong(cursor.getColumnIndex("time"));
-                    Logger.i("目标：" + from);
                     ChatBean bean = new ChatBean();
-                    bean.setId(id);
-                    bean.setType(type);
-                    bean.setMessage(message);
-                    bean.setTime(time);
-                    bean.setTarget(from);
-                    bean.setMsgDb(msgDb);
-                    bean.setUnreadCount(unreadCount);
+                    bean.setId(cursor.getInt(cursor.getColumnIndex("id")));
+                    bean.setType(cursor.getInt(cursor.getColumnIndex("type")));
+                    bean.setTitle(cursor.getString(cursor.getColumnIndex("title")));
+                    bean.setMessage(cursor.getString(cursor.getColumnIndex("message")));
+                    bean.setTime(cursor.getLong(cursor.getColumnIndex("time")));
+                    bean.setTarget(cursor.getString(cursor.getColumnIndex("fromUser")));
+                    bean.setMsgDb(cursor.getString(cursor.getColumnIndex("msgDb")));
+                    bean.setUnreadCount(cursor.getInt(cursor.getColumnIndex("unread")));
                     dataList.add(bean);
                 }
                 return null;
@@ -202,14 +232,14 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
         String message = chatBean.getMessage();
         long time = chatBean.getTime();
 
-        Intent intent = new Intent(getActivity(), MessageActivity.class);
-        intent.putExtra("targetUser", target);
-        intent.putExtra("msgDb", chatBean.getMsgDb());
-        intent.putExtra("type", chatBean.getType());
-        intent.putExtra("notifyId", AppConstants.MESSAGE_NOTIFY_ID);
-        PendingIntent pendingIntent = PendingIntent.getActivity(getActivity(), 100, intent, PendingIntent.FLAG_CANCEL_CURRENT);
-        CommonUtil.showMsgNotify(getActivity(), target.split("@")[0], message, pendingIntent);
-
+        if (chatBean.getType() == AppConstants.ChatType.SINGLE) {
+            Intent intent = new Intent(getActivity(), MessageActivity.class);
+            intent.putExtra("targetUser", target);
+            intent.putExtra("msgDb", chatBean.getMsgDb());
+            intent.putExtra("type", chatBean.getType());
+            PendingIntent pendingIntent = PendingIntent.getActivity(getActivity(), 100, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+            CommonUtil.showMsgNotify(getActivity(), chatBean.getTitle(), message, pendingIntent);
+        }
         int index = chatAdapter.isExist(target);
         if (index < 0) {
             chatBean.setUnreadCount(1);
@@ -239,6 +269,7 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
         long time = message.getTime();
 
         ChatBean chatBean = new ChatBean();
+        chatBean.setTitle(to.split("@")[0]);
         chatBean.setTarget(to);
         chatBean.setTime(time);
         chatBean.setMessage(content);
@@ -265,6 +296,7 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
                 String message = chatBean.getMessage();
                 long time = chatBean.getTime();
                 ContentValues cv = new ContentValues();
+                cv.put("title", chatBean.getTitle());
                 cv.put("fromUser", from);
                 cv.put("message", message);
                 cv.put("msgDb", chatBean.getMsgDb());
@@ -295,16 +327,13 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
         NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
             @Override
             public Object onExecute() throws Exception {
-                String from = chatBean.getTarget();
-                String message = chatBean.getMessage();
-                long time = chatBean.getTime();
                 String msgDb = chatBean.getMsgDb();
                 ContentValues cv = new ContentValues();
-                cv.put("fromUser", from);
+                cv.put("fromUser", chatBean.getTarget());
                 cv.put("toUser", current);
-                cv.put("content", message);
+                cv.put("content", chatBean.getMessage());
                 cv.put("type", AppConstants.ChatType.SINGLE);
-                cv.put("time", time);
+                cv.put("time", chatBean.getTime());
                 cv.put("status", AppConstants.MessageStatus.SUCCESS);
                 cv.put("category", AppConstants.MessageType.IN_TEXT);
                 SQLiteHelper.getMsgInstance(getActivity(), msgDb).insert(AppConstants.TABLE_MESSAGE, cv);
@@ -355,12 +384,17 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         ChatBean bean = dataList.get(position);
         resetUnreadCount(bean.getTarget());
+        if (AppConstants.ChatType.MULTI_INVITE == bean.getType()) {
+            //群聊邀请
+            showToast("群聊");
+        } else {
+            Intent intent = new Intent(getActivity(), MessageActivity.class);
+            intent.putExtra("targetUser", bean.getTarget());
+            intent.putExtra("msgDb", bean.getMsgDb());
+            intent.putExtra("type", bean.getType());
+            startActivity(intent);
+        }
 
-        Intent intent = new Intent(getActivity(), MessageActivity.class);
-        intent.putExtra("targetUser", bean.getTarget());
-        intent.putExtra("msgDb", bean.getMsgDb());
-        intent.putExtra("type", bean.getType());
-        startActivity(intent);
     }
 
     /**
@@ -371,6 +405,9 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
     private void resetUnreadCount(String from) {
         try {
             int index = chatAdapter.isExist(from);
+            if (index <0) {
+                return;
+            }
             dataList.get(index).setUnreadCount(0);
             chatAdapter.refreshData(dataList);
             ((HomeFragment) getParentFragment()).setMessageBadge(chatAdapter.getTotalUnread());
@@ -383,4 +420,29 @@ public class ChatFragment extends SupportFragment implements AdapterView.OnItemC
     public void onReadEvent(ReadEvent e) {
         resetUnreadCount(e.from);
     }
+
+
+    /**
+     * 群聊邀请响应
+     *
+     * @param event
+     */
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onInviteEvent(InviteEvent event) {
+        ChatBean chatBean = event.chatBean;
+        String to = chatBean.getTarget();
+        String content = chatBean.getMessage();
+        long time = chatBean.getTime();
+        int index = chatAdapter.isExist(to);
+        if (index < 0) {
+            dataList.add(chatBean);
+            insertChatDb(chatBean);
+        } else {
+            dataList.get(index).setMessage(content);
+            dataList.get(index).setTime(time);
+            updateChatDb(chatBean);
+        }
+        chatAdapter.refreshData(dataList);
+    }
+
 }

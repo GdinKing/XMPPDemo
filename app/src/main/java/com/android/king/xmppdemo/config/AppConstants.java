@@ -9,13 +9,14 @@ package com.android.king.xmppdemo.config;
 public class AppConstants {
 
     public static final int RECONNECT_DELAY = 5000;//重连延时
+    public static final int HEART_BEAT = 15000;//心跳时间
 
     public static final String SP_KEY_LOGIN_STATUS = "login_status";
     public static final String SP_KEY_LOGIN_ACCOUNT = "login_account";
     public static final String SP_KEY_LOGIN_PASSWORD = "login_password";
     public static final String SP_KEY_SOFT_INPUT_HEIGHT = "soft_input_height";
 
-    public static class FriendStatus {
+    public static class StanzaStatus {
         public static final String SUBSCRIBE = "subscribe";  //收到申请
         public static final String SUBSCRIBED = "subscribed";  //通过申请
         public static final String UNSUBSCRIBE = "unsubscribe";//拒绝
@@ -26,6 +27,7 @@ public class AppConstants {
     public static class ChatType {
         public static final int SINGLE = 0;  //单聊
         public static final int MULTI = 1;  //群聊
+        public static final int MULTI_INVITE = 2;  //群聊邀请
     }
 
     public static class MessageStatus {
@@ -83,6 +85,7 @@ public class AppConstants {
                     "id INTEGER PRIMARY KEY autoincrement," +
                     "fromUser TEXT NOT NULL," +
                     "avatar TEXT," +
+                    "title TEXT," +
                     "message TEXT," +
                     "msgDb TEXT," +
                     "type INTEGER NOT NULL," +

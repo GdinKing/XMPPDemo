@@ -49,6 +49,7 @@ public class AddFriendFragment extends BaseFragment implements AdapterView.OnIte
 
     private ListView lvUser;
     private TextView tvEmpty;
+    private TextView tvMyAccount;
     private List<User> dataList = new ArrayList<>();
 
     @Override
@@ -62,6 +63,7 @@ public class AddFriendFragment extends BaseFragment implements AdapterView.OnIte
         etAccount = rootView.findViewById(R.id.et_account);
         btnAdd = rootView.findViewById(R.id.btn_add);
         tvEmpty = rootView.findViewById(R.id.tv_empty);
+        tvMyAccount = rootView.findViewById(R.id.tv_my_account);
         lvUser = rootView.findViewById(R.id.lv_users);
         lvUser.setOnItemClickListener(this);
         btnAdd.setOnClickListener(new View.OnClickListener() {
@@ -79,6 +81,7 @@ public class AddFriendFragment extends BaseFragment implements AdapterView.OnIte
         userAdapter = new UserAdapter(getActivity(), dataList);
         lvUser.setAdapter(userAdapter);
         lvUser.setEmptyView(tvEmpty);
+        tvMyAccount.setText(getString(R.string.str_my_account, getCurrentLogin()));
     }
 
 

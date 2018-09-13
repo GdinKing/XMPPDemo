@@ -178,28 +178,24 @@ public class HomeFragment extends SupportFragment implements View.OnClickListene
     public void onFriendEvent(FriendEvent event) {
         String from = event.from;
         switch (event.status) {
-            case AppConstants.FriendStatus.SUBSCRIBE:
+            case AppConstants.StanzaStatus.SUBSCRIBE:
                 CommonUtil.showApplyNotify(getActivity(), from.split("@")[0] + "请求加你为好友");
                 checkApplyExist(from);
                 ((FriendsFragment) mFragments[1]).checkApply();
                 break;
-            case AppConstants.FriendStatus.SUBSCRIBED:
+            case AppConstants.StanzaStatus.SUBSCRIBED:
                 Toast.makeText(getActivity(), from.split("@")[0] + "通过了你的好友申请！", Toast.LENGTH_LONG).show();
                 ((FriendsFragment) mFragments[1]).loadData();
                 break;
-            case AppConstants.FriendStatus.UNSUBSCRIBE:
+            case AppConstants.StanzaStatus.UNSUBSCRIBE:
                 Logger.i(from.split("@")[0] + "拒绝了你的好友申请！");
                 break;
-            case AppConstants.FriendStatus.UNAVAILABLE:
+            case AppConstants.StanzaStatus.UNAVAILABLE:
 
                 if (from.split("@")[0].equals(getCurrentLogin())) {
                     //如果是自身离线了，则重新上线，否则会断开闲置连接
-                    NetworkExecutor.getInstance().execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            XMPPHelper.getInstance().changeStatus(AppConstants.FriendStatus.AVAILABLE);
-                        }
-                    });
+                    XMPPHelper.getInstance().changeStatus(AppConstants.StanzaStatus.AVAILABLE);
+                    XMPPHelper.getInstance().addListeners();
                 }
                 break;
         }
@@ -324,5 +320,7 @@ public class HomeFragment extends SupportFragment implements View.OnClickListene
                 .setGravityOffset(10, 0, true)
                 .setBadgeNumber(count);
     }
+
+
 
 }

@@ -1,10 +1,12 @@
 package com.android.king.xmppdemo.ui;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -20,9 +22,14 @@ import com.android.king.xmppdemo.xmpp.XMPPHelper;
 
 import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.ConnectionListener;
-import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.packet.Presence;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import me.weyye.hipermission.HiPermission;
+import me.weyye.hipermission.PermissionCallback;
+import me.weyye.hipermission.PermissionItem;
 
 
 /***
@@ -63,6 +70,31 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
                 SPUtil.setInt(LoginActivity.this, AppConstants.SP_KEY_SOFT_INPUT_HEIGHT, height);
             }
         });
+        //权限申请
+        List<PermissionItem> permissionItems = new ArrayList<>();
+        permissionItems.add(new PermissionItem(Manifest.permission.WRITE_EXTERNAL_STORAGE, "存储", R.drawable.permission_ic_storage));
+        permissionItems.add(new PermissionItem(Manifest.permission.GET_TASKS, "设备", R.drawable.permission_ic_micro_phone));
+        HiPermission.create(this)
+                .permissions(permissionItems)
+                .checkMutiPermission(new PermissionCallback() {
+                    @Override
+                    public void onClose() {
+                    }
+
+                    @Override
+                    public void onFinish() {
+                    }
+
+                    @Override
+                    public void onDeny(String permission, int position) {
+
+                    }
+
+                    @Override
+                    public void onGuarantee(String permission, int position) {
+
+                    }
+                });
     }
 
     @Override
@@ -109,14 +141,7 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
                     @Override
                     public void authenticated(XMPPConnection xmppConnection, boolean b) {
                         mHandler.sendEmptyMessage(200);
-                        try {
-                            Presence presence = new Presence(Presence.Type.available);//在线
-                            xmppConnection.sendStanza(presence);
-                        } catch (SmackException.NotConnectedException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                        XMPPHelper.getInstance().changeStatus(AppConstants.StanzaStatus.AVAILABLE);
                     }
 
                     @Override
@@ -163,12 +188,6 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
                     return;
                 }
 
-                SPUtil.setBoolean(LoginActivity.this, AppConstants.SP_KEY_LOGIN_STATUS, true);
-                SPUtil.setString(LoginActivity.this, AppConstants.SP_KEY_LOGIN_ACCOUNT, etAccount.getText().toString());
-                SPUtil.setString(LoginActivity.this, AppConstants.SP_KEY_LOGIN_PASSWORD, etPassword.getText().toString());
-                Intent it = new Intent(LoginActivity.this, MainActivity.class);
-                startActivity(it);
-                finish();
             }
         });
 
@@ -187,10 +206,6 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
                 Intent it = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(it);
                 finish();
-            } else if (msg.what == 404) {
-                Toast.makeText(LoginActivity.this, "账号或密码错误", Toast.LENGTH_SHORT).show();
-            } else if (msg.what == 500) {
-                Toast.makeText(LoginActivity.this, "登录失败，请稍后重试", Toast.LENGTH_SHORT).show();
             }
         }
 

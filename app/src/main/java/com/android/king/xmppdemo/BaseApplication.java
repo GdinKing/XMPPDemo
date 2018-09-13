@@ -4,6 +4,7 @@ import android.app.Application;
 
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.db.SQLiteHelper;
+import com.android.king.xmppdemo.util.SPUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,9 +20,16 @@ import me.yokeyword.fragmentation.Fragmentation;
  */
 public class BaseApplication extends Application {
 
+    public static BaseApplication instance;
+
+    public static BaseApplication getInstance() {
+        return instance;
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
+        instance = this;
         Fragmentation.builder()
                 .stackViewMode(Fragmentation.NONE)
                 .debug(BuildConfig.DEBUG)
@@ -36,4 +44,13 @@ public class BaseApplication extends Application {
 
     }
 
+
+    /**
+     * 获取当前登录用户
+     *
+     * @return
+     */
+    public static String getCurrentLogin() {
+        return SPUtil.getString(instance, AppConstants.SP_KEY_LOGIN_ACCOUNT);
+    }
 }

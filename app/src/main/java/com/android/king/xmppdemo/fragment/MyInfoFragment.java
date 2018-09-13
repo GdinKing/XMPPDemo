@@ -1,5 +1,7 @@
 package com.android.king.xmppdemo.fragment;
 
+import android.Manifest;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -10,13 +12,19 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
 import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.util.GlideUtil;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
+import com.lzy.imagepicker.ImagePicker;
+import com.lzy.imagepicker.bean.ImageItem;
+import com.lzy.imagepicker.ui.ImageGridActivity;
+import com.lzy.imagepicker.view.CropImageView;
 import com.mylhyl.circledialog.CircleDialog;
 import com.mylhyl.circledialog.callback.ConfigButton;
 import com.mylhyl.circledialog.callback.ConfigItems;
@@ -27,6 +35,13 @@ import com.mylhyl.circledialog.params.TitleParams;
 import com.mylhyl.circledialog.res.values.CircleDimen;
 import com.mylhyl.circledialog.view.listener.OnInputClickListener;
 import com.mylhyl.circledialog.view.listener.OnInputCounterChangeListener;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import me.weyye.hipermission.HiPermission;
+import me.weyye.hipermission.PermissionCallback;
+import me.weyye.hipermission.PermissionItem;
 
 
 /**
@@ -85,6 +100,18 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
         btnNick.setOnClickListener(this);
         btnSex.setOnClickListener(this);
         btnSign.setOnClickListener(this);
+
+        ImagePicker imagePicker = ImagePicker.getInstance();
+        imagePicker.setImageLoader(new GlideUtil());   //设置图片加载器
+        imagePicker.setShowCamera(true);  //显示拍照按钮
+        imagePicker.setCrop(true);        //允许裁剪（单选才有效）
+        imagePicker.setSaveRectangle(true); //是否按矩形区域保存
+        imagePicker.setMultiMode(false);
+        imagePicker.setStyle(CropImageView.Style.RECTANGLE);  //裁剪框的形状
+        imagePicker.setFocusWidth(800);   //裁剪框的宽度。单位像素（圆形自动取宽高最小值）
+        imagePicker.setFocusHeight(800);  //裁剪框的高度。单位像素（圆形自动取宽高最小值）
+        imagePicker.setOutPutX(800);//保存文件的宽度。单位像素
+        imagePicker.setOutPutY(800);//保存文件的高度。单位像素
     }
 
     @Override
@@ -141,6 +168,32 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
         });
     }
 
+    private void checkCameraPermission() {
+        //权限申请
+        HiPermission.create(getActivity())
+                .checkSinglePermission(Manifest.permission.CAMERA, new PermissionCallback() {
+                    @Override
+                    public void onClose() {
+                    }
+
+                    @Override
+                    public void onFinish() {
+                    }
+
+                    @Override
+                    public void onDeny(String permission, int position) {
+
+                    }
+
+                    @Override
+                    public void onGuarantee(String permission, int position) {
+                        Intent intent = new Intent(getActivity(), ImageGridActivity.class);
+                        intent.putExtra(ImageGridActivity.EXTRAS_TAKE_PICKERS,true); // 是否是直接打开相机
+                        startActivityForResult(intent, 100);
+                    }
+                });
+    }
+
     @Override
     public boolean onBackPressedSupport() {
         pop();
@@ -183,7 +236,7 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
                     @Override
                     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                         if (position == 0) {
-                            showToast("拍照上传");
+                            checkCameraPermission();
                         } else if (position == 1) {
                             showToast("从相册选取");
                         }
@@ -310,5 +363,19 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
                 })
                 .setNegative("取消", null)
                 .show();
+    }
+
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == ImagePicker.RESULT_CODE_ITEMS) {
+            if (data != null && requestCode == 100) {
+                ArrayList<ImageItem> images = (ArrayList<ImageItem>) data.getSerializableExtra(ImagePicker.EXTRA_RESULT_ITEMS);
+
+            } else {
+
+            }
+        }
     }
 }

@@ -67,6 +67,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public static SQLiteHelper getInstance(Context context, String dbName, List<String> tableSqls) {
         return getInstance(context, dbName, DB_VERSION, tableSqls);
     }
+
     public static SQLiteHelper getMsgInstance(Context context, String dbName) {
         List<String> tableSqls = new ArrayList<>();
         tableSqls.add(AppConstants.CREATE_TABLE_MESSAGE);
@@ -81,6 +82,25 @@ public class SQLiteHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         for (String sqlString : createTableList) {
             db.execSQL(sqlString);
+        }
+    }
+
+    /**
+     * 删除指定数据库
+     *
+     * @param context
+     * @param dbName
+     */
+    public void deleteDatabase(Context context, String dbName) {
+        try {
+            SQLiteHelper dataBaseOpenHelper = dbMaps.get(dbName);
+            if (dataBaseOpenHelper != null) {
+                dataBaseOpenHelper.close();
+                dbMaps.remove(dataBaseOpenHelper);
+                dataBaseOpenHelper = null;
+            }
+            context.deleteDatabase(dbName);
+        } catch (Exception e) {
         }
     }
 

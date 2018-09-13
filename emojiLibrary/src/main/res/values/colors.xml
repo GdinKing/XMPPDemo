@@ -17,5 +17,5 @@
 <resources>
     <color name="horizontal_divider">#a7a7a7</color>
     <color name="horizontal_vertical">#8f8f8f</color>
-    <color name="selected_gray">#80cbcbcb</color>
+    <color name="selected_gray">#ebebeb</color>
 </resources>

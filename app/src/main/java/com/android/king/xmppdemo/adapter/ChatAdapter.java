@@ -1,6 +1,7 @@
 package com.android.king.xmppdemo.adapter;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +13,8 @@ import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.entity.ChatBean;
 import com.android.king.xmppdemo.util.CommonUtil;
 import com.owater.library.CircleTextView;
+
+import org.jxmpp.jid.DomainBareJid;
 
 import java.util.List;
 
@@ -69,10 +72,15 @@ public class ChatAdapter extends BaseAdapter {
 
         ChatBean chatBean = dataList.get(position);
 
-        holder.tvName.setText(chatBean.getTarget().split("@")[0]);
+        holder.tvName.setText(chatBean.getTitle());
         holder.tvMessage.setText(chatBean.getMessage());
         holder.tvTime.setText(CommonUtil.formatTime(chatBean.getTime()));
-        holder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
+        int avatar = chatBean.getAvatar();
+        if (avatar != 0) {
+            holder.ivAvatar.setImageResource(avatar);
+        } else {
+            holder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
+        }
         holder.badgeView.setText(chatBean.getUnreadCount() > 99 ? "99+" : String.valueOf(chatBean.getUnreadCount()));
         if (chatBean.getUnreadCount() > 0) {
             holder.badgeView.setVisibility(View.VISIBLE);
@@ -109,6 +117,7 @@ public class ChatAdapter extends BaseAdapter {
 
     /**
      * 获取所有未读数
+     *
      * @return
      */
     public int getTotalUnread() {

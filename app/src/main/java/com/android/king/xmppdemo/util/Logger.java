@@ -23,6 +23,7 @@ public class Logger {
             Log.i(TAG, msg);
         }
     }
+
     public static void e(String msg) {
         if (DEBUG) {
             Log.e(TAG, msg);
@@ -30,8 +31,8 @@ public class Logger {
     }
 
     public static void e(Throwable e) {
-        if (DEBUG) {
-            Log.e(TAG, e.getMessage(), e);
+        if (DEBUG && e != null) {
+            Log.e(TAG, e.getCause().toString(), e);
         }
     }
 }

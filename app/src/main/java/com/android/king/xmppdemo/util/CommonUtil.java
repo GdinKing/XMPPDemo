@@ -15,6 +15,8 @@ import android.util.Log;
 
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.config.AppConstants;
+import com.android.king.xmppdemo.ui.MainActivity;
+import com.android.king.xmppdemo.ui.MessageActivity;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -91,7 +93,7 @@ public class CommonUtil {
 
         Calendar current = Calendar.getInstance();
         int currentYear = current.get(Calendar.YEAR);
-        int currentMonth = current.get(Calendar.MONTH);
+        int currentMonth = current.get(Calendar.MONTH) + 1;
         int currentDay = current.get(Calendar.DAY_OF_MONTH);
         Calendar c = Calendar.getInstance();
         c.setTimeInMillis(time);
@@ -116,7 +118,6 @@ public class CommonUtil {
     }
 
     public static String getHostIP() {
-
         String hostIp = null;
         try {
             Enumeration nis = NetworkInterface.getNetworkInterfaces();
@@ -145,15 +146,10 @@ public class CommonUtil {
     }
 
 
-    public static final String ACTION_RECEIVE_NOTICE = "cn.android.king.receive.notice";
-    public static final int NOTICE_ID_TYPE_0 = R.string.app_name;
-
     public static void showApplyNotify(Context context, String msg) {
-        Intent intent = new Intent(ACTION_RECEIVE_NOTICE);
         int requestCode = (int) SystemClock.uptimeMillis();
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-
+        Intent intent = new Intent(context, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(context.NOTIFICATION_SERVICE);
         NotificationCompat.Builder builder;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -165,21 +161,21 @@ public class CommonUtil {
         }
         builder.setPriority(NotificationCompat.PRIORITY_MAX);
         builder.setSmallIcon(R.mipmap.ic_launcher);
-        builder.setContentTitle("提示");
+        builder.setContentTitle("好友申请");
         builder.setContentText(msg);
+        builder.setAutoCancel(true);
         builder.setContentIntent(pendingIntent);
         Notification notification = builder.build();
         notificationManager.notify(AppConstants.FRIEND_NOTIFY_ID, notification);
     }
 
     /**
-     *
      * @param context
      * @param title
      * @param msg
      * @param pendingIntent
      */
-    public static void showMsgNotify(Context context,String title, String msg, PendingIntent pendingIntent) {
+    public static void showMsgNotify(Context context, String title, String msg, PendingIntent pendingIntent) {
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(context.NOTIFICATION_SERVICE);
         NotificationCompat.Builder builder;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

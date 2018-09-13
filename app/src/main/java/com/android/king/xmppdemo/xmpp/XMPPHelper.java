@@ -8,10 +8,12 @@ import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.event.FriendEvent;
 import com.android.king.xmppdemo.listener.IncomingMsgListener;
+import com.android.king.xmppdemo.listener.OnInvitationListener;
 import com.android.king.xmppdemo.util.Logger;
 
 import org.greenrobot.eventbus.EventBus;
 import org.jivesoftware.smack.AbstractXMPPConnection;
+import org.jivesoftware.smack.MessageListener;
 import org.jivesoftware.smack.ReconnectionManager;
 import org.jivesoftware.smack.SASLAuthentication;
 import org.jivesoftware.smack.SmackException;
@@ -31,8 +33,12 @@ import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.jivesoftware.smackx.iqregister.AccountManager;
+import org.jivesoftware.smackx.muc.HostedRoom;
+import org.jivesoftware.smackx.muc.MucEnterConfiguration;
+import org.jivesoftware.smackx.muc.MultiUserChat;
+import org.jivesoftware.smackx.muc.MultiUserChatException;
+import org.jivesoftware.smackx.muc.MultiUserChatManager;
 import org.jivesoftware.smackx.offline.OfflineMessageManager;
-import org.jivesoftware.smackx.ping.PingFailedListener;
 import org.jivesoftware.smackx.ping.PingManager;
 import org.jivesoftware.smackx.receipts.DeliveryReceipt;
 import org.jivesoftware.smackx.receipts.DeliveryReceiptManager;
@@ -41,6 +47,8 @@ import org.jivesoftware.smackx.search.UserSearch;
 import org.jivesoftware.smackx.vcardtemp.VCardManager;
 import org.jivesoftware.smackx.vcardtemp.packet.VCard;
 import org.jivesoftware.smackx.vcardtemp.provider.VCardProvider;
+import org.jivesoftware.smackx.xdata.Form;
+import org.jivesoftware.smackx.xdata.FormField;
 import org.jxmpp.jid.DomainBareJid;
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.impl.JidCreate;
@@ -76,9 +84,8 @@ public class XMPPHelper {
 
     private AbstractXMPPConnection xmppConnection = null;
 
-    private ChatManager chatManager;
-    private OfflineMessageManager offlineManager;
     private IncomingMsgListener incomingListener = null;
+    private OnInvitationListener invitationListener = null;
 
     private XMPPHelper() {
         xmppConnection = openConnection();
@@ -125,7 +132,7 @@ public class XMPPHelper {
             builder.setHostnameVerifier(verifier);
             builder.setHostAddress(addr);
             builder.setPort(5222);
-            builder.setSendPresence(true);
+            builder.setSendPresence(true);//若接收不了离线消息，设置为false
             builder.setConnectTimeout(15000);
             builder.setCompressionEnabled(true);
             builder.setSecurityMode(XMPPTCPConnectionConfiguration.SecurityMode.disabled);
@@ -138,12 +145,6 @@ public class XMPPHelper {
 
             XMPPTCPConnectionConfiguration config = builder.build();
             conn = new XMPPTCPConnection(config);
-
-            // 自动回复回执方法，如果对方的消息要求回执
-            ProviderManager.addExtensionProvider(DeliveryReceipt.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceipt.Provider());
-            ProviderManager.addExtensionProvider(DeliveryReceiptRequest.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceiptRequest.Provider());
-            DeliveryReceiptManager.getInstanceFor(xmppConnection).autoAddDeliveryReceiptRequests();
-
         } catch (Exception e) {
             Logger.e(e);
         }
@@ -171,11 +172,16 @@ public class XMPPHelper {
         SASLAuthentication.unBlacklistSASLMechanism("PLAIN");
         SASLAuthentication.blacklistSASLMechanism("SCRAM-SHA-1-PLUS");
 
+        // 自动回复回执方法，如果对方的消息要求回执
+        ProviderManager.addExtensionProvider(DeliveryReceipt.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceipt.Provider());
+        ProviderManager.addExtensionProvider(DeliveryReceiptRequest.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceiptRequest.Provider());
+        DeliveryReceiptManager.getInstanceFor(xmppConnection).autoAddDeliveryReceiptRequests();
+
         ReconnectionManager manager = ReconnectionManager.getInstanceFor(xmppConnection);
         manager.setFixedDelay(0);//延迟0秒重连
         manager.enableAutomaticReconnection();
-
         xmppConnection.login(username, password, Resourcepart.from(resource));
+        PingManager.getInstanceFor(xmppConnection).setPingInterval(20);//心跳
     }
 
     /**
@@ -191,6 +197,7 @@ public class XMPPHelper {
         if (!xmppConnection.isAuthenticated()) {
             xmppConnection.login();//之前登陆过了，smack会设置账号密码，可看login()的源码
         }
+
     }
 
     /**
@@ -202,10 +209,10 @@ public class XMPPHelper {
         try {
             Presence presence = null;
             switch (status) {
-                case AppConstants.FriendStatus.AVAILABLE:
+                case AppConstants.StanzaStatus.AVAILABLE:
                     presence = new Presence(Presence.Type.available);//在线
                     break;
-                case AppConstants.FriendStatus.UNAVAILABLE:
+                case AppConstants.StanzaStatus.UNAVAILABLE:
                     presence = new Presence(Presence.Type.unavailable);//离线
                     break;
                 default:
@@ -213,7 +220,9 @@ public class XMPPHelper {
                     break;
             }
 //            presence.setTo(userName); 这里可以设置对某人显示离线（即隐身）
-            xmppConnection.sendStanza(presence);
+            if (isLogin()) {
+                xmppConnection.sendStanza(presence);
+            }
         } catch (Exception e) {
             Logger.e(e);
         }
@@ -345,7 +354,7 @@ public class XMPPHelper {
     public boolean applyFriend(String account) {
         try {
             if (!account.contains("@")) {
-                account = account + "@" + SERVER_DOMAIN;
+                account = account + "@" + xmppConnection.getServiceName();
             }
             Presence presence = new Presence(Presence.Type.subscribe);
             presence.setTo(account);
@@ -364,7 +373,7 @@ public class XMPPHelper {
     public void refuse(String account) {
         try {
             if (!account.contains("@")) {
-                account = account + "@" + SERVER_DOMAIN;
+                account = account + "@" + xmppConnection.getServiceName();
             }
             Presence presence = new Presence(Presence.Type.unsubscribed);
             presence.setTo(account);
@@ -385,7 +394,7 @@ public class XMPPHelper {
 
         try {
             if (!account.contains("@")) {
-                account = account + "@" + SERVER_DOMAIN;
+                account = account + "@" + xmppConnection.getServiceName();
             }
             Presence presence = new Presence(Presence.Type.subscribed);
             presence.setTo(account);
@@ -441,7 +450,7 @@ public class XMPPHelper {
     public VCard getUserVCard(String account) throws XMPPException, XmppStringprepException, SmackException.NotConnectedException, InterruptedException, SmackException.NoResponseException {
         if (isConnected() && !TextUtils.isEmpty(account)) {
             if (!account.contains("@")) {
-                account = account + "@" + SERVER_DOMAIN;
+                account = account + "@" + xmppConnection.getServiceName();
             }
             VCard vCard = VCardManager.getInstanceFor(xmppConnection).loadVCard(JidCreate.entityBareFrom(account));
             return vCard;
@@ -463,7 +472,7 @@ public class XMPPHelper {
     public User getUserInfo(String account) throws XMPPException, XmppStringprepException, SmackException.NotConnectedException, InterruptedException, SmackException.NoResponseException {
         if (isConnected() && !TextUtils.isEmpty(account)) {
             if (!account.contains("@")) {
-                account = account + "@" + XMPPHelper.SERVER_DOMAIN;
+                account = account + "@" + xmppConnection.getServiceName();
             }
             VCard vCard = VCardManager.getInstanceFor(xmppConnection).loadVCard(JidCreate.entityBareFrom(account));
 
@@ -500,7 +509,7 @@ public class XMPPHelper {
         Bitmap ic = null;
         try {
             if (!account.contains("@")) {
-                account = account + "@" + SERVER_DOMAIN;
+                account = account + "@" + xmppConnection.getServiceName();
             }
             VCard vcard = VCardManager.getInstanceFor(xmppConnection).loadVCard(JidCreate.entityBareFrom(account));
             if (vcard == null || vcard.getAvatar() == null) {
@@ -549,20 +558,18 @@ public class XMPPHelper {
         if (incomingListener == null) {
             incomingListener = new IncomingMsgListener();
         }
-        if (chatManager == null) {
-            chatManager = ChatManager.getInstanceFor(xmppConnection);
-        }
-        chatManager.addIncomingListener(incomingListener);
+        ChatManager.getInstanceFor(xmppConnection).addIncomingListener(incomingListener);
     }
+
 
     /**
      * 移除监听
      */
     public void removeMessageListener() {
-        if (chatManager == null || incomingListener == null) {
+        if (incomingListener == null) {
             return;
         }
-        chatManager.removeIncomingListener(incomingListener);
+        ChatManager.getInstanceFor(xmppConnection).removeIncomingListener(incomingListener);
     }
 
     /**
@@ -590,11 +597,231 @@ public class XMPPHelper {
     }
 
 
+    public List<Message> getOfflineMessage() throws Exception {
+        OfflineMessageManager offlineManager = new OfflineMessageManager(xmppConnection);
+        //获取离线消息
+        List<Message> messageList = offlineManager.getMessages();
+
+        //特别说明，这条代码的意思是获取离线消息的数量，我也不知道为啥只有加了这句才可以真正删除离线记录，
+        //否则就一直删不掉，老重复接收重复的离线消息记录
+        offlineManager.getMessageCount();
+        //获取后删除离线消息记录
+        offlineManager.deleteMessages();
+
+        //设置在线，只有设置了在线状态，才可以监听在线消息，否则监听都无效
+        Presence presence = new Presence(Presence.Type.available);
+        xmppConnection.sendStanza(presence);
+        return messageList;
+    }
+
     /**
-     * 心跳连接
+     * 获取服务器上的所有群组
      */
-    public void addHeartBeat(PingFailedListener listener) {
-        PingManager.setDefaultPingInterval(20000);//20秒心跳连接，不建议设置太短
-        PingManager.getInstanceFor(xmppConnection).registerPingFailedListener(listener);
+    public List<HostedRoom> getHostedRoom() throws XMPPException.XMPPErrorException, SmackException.NotConnectedException, InterruptedException, SmackException.NoResponseException, MultiUserChatException.NotAMucServiceException {
+        MultiUserChatManager manager = MultiUserChatManager.getInstanceFor(xmppConnection);
+
+        List<DomainBareJid> serviceNames = manager.getXMPPServiceDomains();
+        for (int i = 0; i < serviceNames.size(); i++) {
+            return manager.getHostedRooms(serviceNames.get(i));
+        }
+        return null;
+    }
+
+    /**
+     * 获取用户的的所有群组
+     */
+    public List<MultiUserChat> getJoinRoom(String user) throws XmppStringprepException, XMPPException.XMPPErrorException, SmackException.NotConnectedException, InterruptedException, SmackException.NoResponseException {
+        if (!user.contains("@")) {
+            user = user + "@" + xmppConnection.getServiceName();
+        }
+
+        MultiUserChatManager manager = MultiUserChatManager.getInstanceFor(xmppConnection);
+
+        List<EntityBareJid> rooms = manager.getJoinedRooms(JidCreate.entityBareFrom(user));
+        List<MultiUserChat> multiChatList = new ArrayList<>();
+        for (EntityBareJid jid : rooms) {
+            MultiUserChat chat = manager.getMultiUserChat(jid);
+            multiChatList.add(chat);
+        }
+        return multiChatList;
+
+    }
+
+    /**
+     * 加入一个群聊聊天室
+     *
+     * @param groupId  聊天室ip 格式为>>群组名称@conference.ip
+     * @param nickName 用户在聊天室中的昵称
+     * @param password 聊天室密码 没有密码则传""
+     * @return
+     */
+    public MultiUserChat joinMultiChat(String groupId, String nickName, String password) throws Exception {
+
+        // 使用XMPPConnection创建一个MultiUserChat窗口
+        MultiUserChat muc = MultiUserChatManager.getInstanceFor(xmppConnection).getMultiUserChat(JidCreate.entityBareFrom(groupId));
+
+        MucEnterConfiguration.Builder builder = muc.getEnterConfigurationBuilder(Resourcepart.from(nickName));
+        //只获取最后10条历史记录
+        builder.requestMaxCharsHistory(10);
+        builder.withPassword(password);
+        MucEnterConfiguration mucEnterConfiguration = builder.build();
+        //加入群
+        muc.join(mucEnterConfiguration);
+        return muc;
+
+
+//        if ("XMPPError: not-authorized - auth".equals(e.getMessage())) {
+//            //需要密码加入
+//        }
+    }
+
+    /**
+     * 创建群聊聊天室
+     *
+     * @param roomName 聊天室名字
+     * @param nickName 创建者在聊天室中的昵称
+     * @param password 聊天室密码
+     * @return
+     */
+    public MultiUserChat createChatRoom(String roomName, String nickName, String password, List<User> users) {
+        MultiUserChat muc;
+        try {
+            // 创建一个MultiUserChat
+            muc = MultiUserChatManager.getInstanceFor(xmppConnection).getMultiUserChat(JidCreate.entityBareFrom(roomName + "@conference." + xmppConnection.getServiceName()));
+            // 创建聊天室
+            MultiUserChat.MucCreateConfigFormHandle handle = muc.create(Resourcepart.from(nickName));
+            if (handle != null) {
+                // 获得聊天室的配置表单
+                Form form = muc.getConfigurationForm();
+                // 根据原始表单创建一个要提交的新表单。
+                Form submitForm = form.createAnswerForm();
+                // 向要提交的表单添加默认答复
+                List<FormField> fields = form.getFields();
+                for (int i = 0; fields != null && i < fields.size(); i++) {
+                    if (FormField.Type.hidden != fields.get(i).getType() &&
+                            fields.get(i).getVariable() != null) {
+                        // 设置默认值作为答复
+                        submitForm.setDefaultAnswer(fields.get(i).getVariable());
+                    }
+                }
+                // 设置聊天室的新拥有者
+                List owners = new ArrayList();
+                owners.add(xmppConnection.getUser());// 用户JID
+                if (users != null && !users.isEmpty()) {
+                    for (int i = 0; i < users.size(); i++) {  //添加群成员,用户jid格式和之前一样 用户名@openfire服务器名称
+                        EntityBareJid userJid = JidCreate.entityBareFrom(users.get(i).getAccount());
+                        owners.add(userJid.toString());
+                    }
+                }
+
+                submitForm.setAnswer("muc#roomconfig_roomowners", owners);
+                // 设置聊天室是持久聊天室，即将要被保存下来
+                submitForm.setAnswer("muc#roomconfig_persistentroom", true);
+                // 房间仅对成员开放
+                submitForm.setAnswer("muc#roomconfig_membersonly", false);
+                // 允许占有者邀请其他人
+                submitForm.setAnswer("muc#roomconfig_allowinvites", true);
+                if (password != null && password.length() != 0) {
+                    // 进入是否需要密码
+                    submitForm.setAnswer("muc#roomconfig_passwordprotectedroom", true);
+                    // 设置进入密码
+                    submitForm.setAnswer("muc#roomconfig_roomsecret", password);
+                }
+                // 能够发现占有者真实 JID 的角色
+                // submitForm.setAnswer("muc#roomconfig_whois", "anyone");
+                // 登录房间对话
+                submitForm.setAnswer("muc#roomconfig_enablelogging", true);
+                // 仅允许注册的昵称登录
+                submitForm.setAnswer("x-muc#roomconfig_reservednick", true);
+                // 允许使用者修改昵称
+                submitForm.setAnswer("x-muc#roomconfig_canchangenick", false);
+                // 允许用户注册房间
+                submitForm.setAnswer("x-muc#roomconfig_registration", false);
+                // 发送已完成的表单（有默认值）到服务器来配置聊天室
+                muc.sendConfigurationForm(submitForm);
+
+            } else {
+                //error
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        return muc;
+    }
+
+    /**
+     * 退出群聊
+     *
+     * @param groupName
+     * @throws XmppStringprepException
+     */
+    public void quitRoom(String groupName) throws Exception {
+        String jid = groupName + "@conference." + xmppConnection.getServiceName();
+        EntityBareJid groupJid = JidCreate.entityBareFrom(jid);
+
+        MultiUserChatManager multiUserChatManager = MultiUserChatManager.getInstanceFor(xmppConnection);
+        MultiUserChat multiUserChat = multiUserChatManager.getMultiUserChat(groupJid);
+        //退出群
+        multiUserChat.leave();
+    }
+
+    /**
+     * 发送群聊消息
+     *
+     * @param groupName
+     * @param body
+     */
+    public void sendChatGroupMessage(String groupName, String body) throws Exception {
+        //拼凑jid
+        String jid = groupName + "@conference." + xmppConnection.getServiceName();
+        //创建jid实体
+        EntityBareJid groupJid = JidCreate.entityBareFrom(jid);
+        //群管理对象
+        MultiUserChatManager multiUserChatManager = MultiUserChatManager.getInstanceFor(xmppConnection);
+        MultiUserChat multiUserChat = multiUserChatManager.getMultiUserChat(groupJid);
+        //发送信息
+        multiUserChat.sendMessage(body);
+
+    }
+
+    /**
+     * 监听群聊申请
+     */
+    public void addInvitationListener() {
+        if (invitationListener == null) {
+            invitationListener = new OnInvitationListener();
+        }
+        MultiUserChatManager.getInstanceFor(xmppConnection).addInvitationListener(invitationListener);
+    }
+
+    /**
+     * 群聊消息监听
+     *
+     * @param group
+     * @throws XmppStringprepException
+     */
+    public void multiChatListener(String group) throws XmppStringprepException {
+        if (!group.contains("@")) {
+            group = group + "@" + SERVER_DOMAIN;
+        }
+        MultiUserChat multiUserChat = MultiUserChatManager.getInstanceFor(xmppConnection).getMultiUserChat(JidCreate.entityBareFrom(group));
+        multiUserChat.addMessageListener(new MessageListener() {
+            @Override
+            public void processMessage(final Message message) {
+                //当消息返回为空的时候，表示用户正在聊天窗口编辑信息并未发出消息
+                if (!TextUtils.isEmpty(message.getBody())) {
+                    //收到的消息
+                    Logger.i(message.getBody());
+                }
+            }
+        });
+    }
+
+    public void addListeners() {
+        addMessageListener();
+        addInvitationListener();
+        addStanzaListener();
     }
 }

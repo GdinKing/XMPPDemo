@@ -161,11 +161,8 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
         targetUser = getIntent().getStringExtra("targetUser");
         msgDb = getIntent().getStringExtra("msgDb");
         type = getIntent().getIntExtra("type", AppConstants.ChatType.SINGLE);
-        int notifyId = getIntent().getIntExtra("notifyId", -1);
-        if (notifyId != -1) {
-            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager.cancel(notifyId);
-        }
+
+
         messageAdapter = new MessageAdapter(this, dataList);
         lvMessage.setAdapter(messageAdapter);
         lvMessage.setEmptyView(tvEmpty);
@@ -212,6 +209,9 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
                 resetUnreadCount(targetUser);
                 messageAdapter.refreshData(dataList);
                 scrollListViewToBottom();
+
+                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                notificationManager.cancel(AppConstants.MESSAGE_NOTIFY_ID);
             }
         });
     }
@@ -307,6 +307,8 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
                 messageAdapter.refreshData(dataList);
                 insertMsgDb(bean);
                 scrollListViewToBottom();
+                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                notificationManager.cancel(AppConstants.MESSAGE_NOTIFY_ID);
                 EventBus.getDefault().post(new SendMsgEvent(bean));
             }
         });
