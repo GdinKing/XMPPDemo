@@ -10,6 +10,8 @@ android {
         versionName "1.0.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        buildConfigField ("String","SERVER_HOST",rootProject.ext.config.server_host)//服务器地址配置，使用时请注释或自定义
     }
     buildTypes {
         release {

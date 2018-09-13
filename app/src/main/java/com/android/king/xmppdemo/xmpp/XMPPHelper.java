@@ -2,6 +2,7 @@ package com.android.king.xmppdemo.xmpp;
 
 import android.text.TextUtils;
 
+import com.android.king.xmppdemo.BuildConfig;
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.event.FriendEvent;
@@ -76,9 +77,7 @@ import javax.net.ssl.SSLSession;
  */
 public class XMPPHelper {
 
-
-    //    public static final String SERVER_DOMAIN = "10.0.1.90";
-    public static final String SERVER_DOMAIN = "60.205.185.28";
+    public static final String SERVER_DOMAIN = BuildConfig.SERVER_HOST;
     public static final int SERVER_PORT = 5222;
 
     private static XMPPHelper mInstance = null;
