@@ -62,11 +62,7 @@ public abstract class BaseFragment extends SupportFragment {
             ivBack.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (backClickListener != null) {
-                        backClickListener.onBackClick();
-                    } else {
-                        pop();
-                    }
+                   onBackPressedSupport();
                 }
             });
         } catch (Exception e) {

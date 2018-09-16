@@ -1,1 +1,1 @@
-include ':app',":emojiLibrary"
+include ':app', ':scanlibrary',":emojiLibrary"

@@ -116,4 +116,7 @@ public class AppConstants {
     public static final String ACTION_RECEIVE_MESSAGE = "action.receive.message";
     public static final int FRIEND_NOTIFY_ID = 0;
     public static final int MESSAGE_NOTIFY_ID = 1;
+
+
+    public static final String INFO_URL = "https://info.3g.qq.com";
 }
