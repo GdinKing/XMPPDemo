@@ -25,10 +25,11 @@ import com.android.king.xmppdemo.event.ChatEvent;
 import com.android.king.xmppdemo.event.ReadEvent;
 import com.android.king.xmppdemo.event.SendMsgEvent;
 import com.android.king.xmppdemo.fragment.PanelFragment;
-import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
+import com.android.king.xmppdemo.listener.OnExecuteCallback;
 import com.android.king.xmppdemo.listener.OnTipDialogListener;
-import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.net.AsyncExecutor;
 import com.android.king.xmppdemo.util.Logger;
+import com.android.king.xmppdemo.util.SoftInputUtil;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
 
 import org.greenrobot.eventbus.EventBus;
@@ -45,9 +46,7 @@ import io.github.rockerhieu.emojicon.EmojiconsFragment;
 import io.github.rockerhieu.emojicon.emoji.Emojicon;
 
 /***
- * 名称：
- * 描述：
- * 最近修改时间：2018年09月11日 16:06分
+ * 聊天发消息界面
  * @since 2018-09-11
  * @author king
  */
@@ -72,6 +71,7 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
     private ImageView ivAdd;
     private ImageView ivEmoji;
 
+    private String title;
     private String targetUser;
     private String msgDb;
     private int type;
@@ -159,6 +159,7 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
     @Override
     protected void initData() {
         targetUser = getIntent().getStringExtra("targetUser");
+        title = getIntent().getStringExtra("title");
         msgDb = getIntent().getStringExtra("msgDb");
         type = getIntent().getIntExtra("type", AppConstants.ChatType.SINGLE);
 
@@ -168,14 +169,14 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
         lvMessage.setEmptyView(tvEmpty);
         lvMessage.setOnItemLongClickListener(this);
 
-        setTitle(targetUser.split("@")[0]);
+        setTitle(title);
         loadData();
     }
 
 
     private void loadData() {
         dataList.clear();
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<Void>() {
+        AsyncExecutor.getInstance().execute(new OnExecuteCallback<Void>() {
             @Override
             public Void onExecute() throws Exception {
                 Cursor cursor = SQLiteHelper.getMsgInstance(mContext, msgDb).rawQuery("select * from " + AppConstants.TABLE_MESSAGE, null);
@@ -288,7 +289,7 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
         bean.setType(type);
         bean.setTo(targetUser);
 
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
+        AsyncExecutor.getInstance().execute(new OnExecuteCallback() {
             @Override
             public Object onExecute() throws Exception {
                 XMPPHelper.getInstance().sendUserMsg(Message.Type.chat, "", targetUser, msg);

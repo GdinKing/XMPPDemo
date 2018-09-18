@@ -4,12 +4,14 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
+import android.os.Looper;
 import android.widget.Toast;
 
 import com.android.king.xmppdemo.config.AppConstants;
-import com.android.king.xmppdemo.event.ReconnectErrorEvent;
-import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
-import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.event.ConflictEvent;
+import com.android.king.xmppdemo.listener.OnExecuteCallback;
+import com.android.king.xmppdemo.net.AsyncExecutor;
+import com.android.king.xmppdemo.util.CommonUtil;
 import com.android.king.xmppdemo.util.Logger;
 
 import org.greenrobot.eventbus.EventBus;
@@ -19,9 +21,7 @@ import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smackx.ping.PingFailedListener;
-import org.jivesoftware.smackx.ping.PingManager;
 
-import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -59,17 +59,18 @@ public class XMPPService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Logger.i("服务启动了");
         connection = XMPPHelper.getInstance().getConnection();
-
         connectionListener = new ConnectionListener() {
 
             @Override
             public void connected(XMPPConnection xmppConnection) {
-
+                XMPPHelper.reconnectCount = 0;
             }
 
             @Override
             public void authenticated(XMPPConnection xmppConnection, boolean b) {
-
+                XMPPHelper.reconnectCount = 0;
+                XMPPHelper.getInstance().changeStatus(AppConstants.StanzaStatus.AVAILABLE);
+                Logger.i("来自连接监听,登录成功");
             }
 
             @Override
@@ -85,8 +86,7 @@ public class XMPPService extends Service {
                 }
                 if (e.getMessage() != null && e.getMessage().contains("conflict")) { //被挤掉线
                     //被人挤下线,重新弹出登录
-                    Toast.makeText(getApplication(), "您的账号在别处登录", Toast.LENGTH_LONG).show();
-                    EventBus.getDefault().post(new ReconnectErrorEvent());
+                    EventBus.getDefault().post(new ConflictEvent(false));
                     stopSelf();
                 }
                 //这里smack会自动重连
@@ -114,58 +114,39 @@ public class XMPPService extends Service {
             public void reconnectionFailed(Exception e) {
                 Logger.i("来自连接监听,重连失败");
                 Logger.e(e);
-                NetworkExecutor.getInstance().execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            XMPPHelper.getInstance().reconnect();
-                        } catch (Exception e1) {
-                            Logger.e(e1);
-                        }
-                    }
-                });
-
+                reconnect();
             }
         };
+
         connection.addConnectionListener(connectionListener);
-
-        try {
-            timer = new Timer();
-            timer.schedule(new HeartBeatTask(), AppConstants.HEART_BEAT, AppConstants.HEART_BEAT);
-        } catch (Exception e) {
-
+        if (!connection.isConnected()) {
+            reconnect();
         }
-
+        //心跳
+        XMPPHelper.getInstance().addPing(new PingFailedListener() {
+            @Override
+            public void pingFailed() {
+                reconnect();
+            }
+        });
         return START_STICKY;
     }
 
 
     /**
-     * 心跳连接
+     * 重连
      */
-    private class HeartBeatTask extends TimerTask {
+    private class ReconnectTask extends TimerTask {
         @Override
         public void run() {
             if (connection == null) {
                 return;
             }
-            if (!connection.isConnected()) {
+            if (!XMPPHelper.getInstance().isConnected()) {
                 reconnect();
                 return;
             }
-            PingManager.getInstanceFor(connection).registerPingFailedListener(new PingFailedListener() {
-                @Override
-                public void pingFailed() {
-                    reconnect();
-                }
-            });
-            try {
-                Logger.i("心跳连接:" + new Date().toLocaleString());
-                PingManager.getInstanceFor(connection).pingServerIfNecessary();
-                XMPPHelper.getInstance().changeStatus(AppConstants.StanzaStatus.AVAILABLE);
-            } catch (Exception e) {
-                Logger.e(e);
-            }
+
         }
     }
 
@@ -180,8 +161,20 @@ public class XMPPService extends Service {
         super.onDestroy();
     }
 
+    /**
+     * 重连
+     */
     private void reconnect() {
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
+        if(!CommonUtil.isNetAvailable(this)){
+            return;
+        }
+        if (XMPPHelper.reconnectCount > 5) {
+            //重连次数超过5次，退出app
+            System.exit(-1);
+            return;
+        }
+        XMPPHelper.reconnectCount += 1;
+        AsyncExecutor.getInstance().execute(new OnExecuteCallback() {
             @Override
             public Object onExecute() throws Exception {
                 XMPPHelper.getInstance().reconnect();
@@ -192,9 +185,12 @@ public class XMPPService extends Service {
             public void onFinish(Object result, Exception e) {
                 if (e != null) {
                     Logger.e(e);
-                    //退出app
-                    System.exit(-1);
+                    //重连失败，
+                    timer = new Timer();
+                    timer.schedule(new ReconnectTask(), AppConstants.RECONNECT_DELAY);//延迟n秒后重连
+                    return;
                 }
+                XMPPHelper.getInstance().addListeners();
             }
         });
 

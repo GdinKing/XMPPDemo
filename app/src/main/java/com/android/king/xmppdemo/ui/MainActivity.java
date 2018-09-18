@@ -7,17 +7,24 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.config.AppConstants;
+import com.android.king.xmppdemo.event.LoginEvent;
+import com.android.king.xmppdemo.event.ConflictEvent;
 import com.android.king.xmppdemo.fragment.HomeFragment;
-import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
-import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.listener.OnExecuteCallback;
+import com.android.king.xmppdemo.net.AsyncExecutor;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.util.SPUtil;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
 import com.android.king.xmppdemo.xmpp.XMPPJobService;
 import com.android.king.xmppdemo.xmpp.XMPPService;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import me.yokeyword.fragmentation.SupportActivity;
 
@@ -48,6 +55,7 @@ public class MainActivity extends SupportActivity {
                 Logger.e("任务调度出错");
             }
         }
+        EventBus.getDefault().register(this);
     }
 
 
@@ -56,46 +64,25 @@ public class MainActivity extends SupportActivity {
             homeFragment = HomeFragment.newInstance();
             loadRootFragment(R.id.fl_container, homeFragment);
         }
-        //判断是否登录过
-        boolean isLogin = SPUtil.getBoolean(this, AppConstants.SP_KEY_LOGIN_STATUS, false);
-        if (isLogin) {
-            if (!XMPPHelper.getInstance().isLogin()) {//账号已经登录过，但xmpp未登录
-                final String account = SPUtil.getString(this, AppConstants.SP_KEY_LOGIN_ACCOUNT);
-                final String password = SPUtil.getString(this, AppConstants.SP_KEY_LOGIN_PASSWORD);
-                NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
-                    @Override
-                    public Object onExecute() throws Exception {
-                        XMPPHelper.getInstance().getConnection().login(account, password);
-                        return null;
-                    }
 
-                    @Override
-                    public void onFinish(Object result, Exception e) {
-                        if (e != null) {
-                            Logger.e(e);
-                            startActivity(new Intent(MainActivity.this, LoginActivity.class));
-                            finish();
-                            return;
-                        }
-                        addListener();
-                    }
-                });
-            } else {
-                addListener();
-            }
+    }
+
+
+    /**
+     * 挤下线回调
+     *
+     * @param event
+     */
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onReconnectEvent(ConflictEvent event) {
+        if(!event.isConnected) {
+            Toast.makeText(this, "您的账号在别处登录", Toast.LENGTH_LONG).show();
+            XMPPHelper.getInstance().logout();
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
         }
     }
 
-    /**
-     * 监听器
-     */
-    private void addListener() {
-        Intent intent = new Intent(this, XMPPService.class);
-        startService(intent);
-        XMPPHelper.getInstance().addMessageListener();
-        XMPPHelper.getInstance().addInvitationListener();
-        XMPPHelper.getInstance().addStanzaListener();
-    }
 
     @Override
     public void onBackPressedSupport() {
@@ -105,6 +92,7 @@ public class MainActivity extends SupportActivity {
 
     @Override
     protected void onDestroy() {
+        EventBus.getDefault().unregister(this);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             if (mJobScheduler != null) {
                 mJobScheduler.cancelAll();

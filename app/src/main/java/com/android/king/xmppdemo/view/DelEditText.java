@@ -54,10 +54,12 @@ public class DelEditText extends AppCompatEditText {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
 
             }
+
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
             }
+
             @Override
             public void afterTextChanged(Editable s) {
                 setDrawable();
@@ -66,9 +68,9 @@ public class DelEditText extends AppCompatEditText {
         setOnFocusChangeListener(new OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
-                if(!hasFocus){
-                    setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
-                }else{
+                if (!hasFocus) {
+                    setCompoundDrawablesWithIntrinsicBounds(getCompoundDrawables()[0], null, null, null);
+                } else {
                     setDrawable();
                 }
             }
@@ -77,12 +79,10 @@ public class DelEditText extends AppCompatEditText {
 
     //设置删除图片
     private void setDrawable() {
-        if(length() < 1){
-            //表示没有输入文本内容时显示的图片，个人觉得不需要设置默认图片
-            setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
-//          setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
-        }else{
-            setCompoundDrawablesWithIntrinsicBounds(null, null, imgAble, null);
+        if (length() < 1) {
+            setCompoundDrawablesWithIntrinsicBounds(getCompoundDrawables()[0], null, null, null);
+        } else {
+            setCompoundDrawablesWithIntrinsicBounds(getCompoundDrawables()[0], null, imgAble, null);
         }
     }
 
@@ -96,7 +96,7 @@ public class DelEditText extends AppCompatEditText {
             Rect rect = new Rect();
             getGlobalVisibleRect(rect);
             rect.left = rect.right - 70;
-            if(rect.contains(eventX, eventY))
+            if (rect.contains(eventX, eventY))
                 setText("");
         }
         return super.onTouchEvent(event);
@@ -108,24 +108,24 @@ public class DelEditText extends AppCompatEditText {
     }
 
 
-
     /**
      * 设置晃动动画
      */
-    public void setShakeAnimation(){
-        this.startAnimation( shakeAnimation( 5 ) );
+    public void setShakeAnimation() {
+        this.startAnimation(shakeAnimation(5));
     }
 
 
     /**
      * 晃动动画
+     *
      * @param counts 1秒钟晃动多少下
      * @return
      */
-    public static Animation shakeAnimation(int counts){
+    public static Animation shakeAnimation(int counts) {
         Animation translateAnimation = new TranslateAnimation(0, 10, 0, 0);
         translateAnimation.setInterpolator(new CycleInterpolator(counts));
-        translateAnimation.setDuration( 1000 );
+        translateAnimation.setDuration(1000);
         return translateAnimation;
     }
 }

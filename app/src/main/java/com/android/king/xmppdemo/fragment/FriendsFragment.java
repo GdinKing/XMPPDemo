@@ -2,6 +2,7 @@ package com.android.king.xmppdemo.fragment;
 
 import android.database.Cursor;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,8 +19,9 @@ import com.android.king.xmppdemo.db.SQLiteHelper;
 import com.android.king.xmppdemo.entity.Apply;
 import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.event.AgreeEvent;
-import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
-import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.event.LoginEvent;
+import com.android.king.xmppdemo.listener.OnExecuteCallback;
+import com.android.king.xmppdemo.net.AsyncExecutor;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
 
@@ -52,6 +54,16 @@ public class FriendsFragment extends SupportFragment implements View.OnClickList
     private RelativeLayout rlNewFriend;
     private RelativeLayout rlMultiChat;
 
+    private int badgeCount = 0;
+    private QBadgeView badgeView;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        EventBus.getDefault().register(this);
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -70,15 +82,9 @@ public class FriendsFragment extends SupportFragment implements View.OnClickList
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-        EventBus.getDefault().register(this);
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
+    public void onDetach() {
         EventBus.getDefault().unregister(this);
+        super.onDetach();
     }
 
     private void initData() {
@@ -89,7 +95,7 @@ public class FriendsFragment extends SupportFragment implements View.OnClickList
     }
 
     public void loadData() {
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<List<User>>() {
+        AsyncExecutor.getInstance().execute(new OnExecuteCallback<List<User>>() {
             @Override
             public List<User> onExecute() throws Exception {
                 List<User> userList = XMPPHelper.getInstance().getAllFriends();
@@ -128,13 +134,13 @@ public class FriendsFragment extends SupportFragment implements View.OnClickList
         }
     }
 
-    public int getBadgeCount() {
-        return badgeCount;
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onLoginEvent(LoginEvent event) {
+        if (event.isLogin) {
+            loadData();
+        }
     }
-
-    private int badgeCount = 0;
-
-    private QBadgeView badgeView;
 
     public void addFriendBadge() {
         badgeCount += 1;

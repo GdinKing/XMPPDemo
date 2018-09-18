@@ -4,19 +4,17 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 
-import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
+import com.android.king.xmppdemo.listener.OnExecuteCallback;
 
 /***
- * 名称：
- * 描述：
- * 最近修改时间：2018年09月05日 16:54分
+ * 异步执行工具
  * @since 2018-09-05
  * @author king
  */
-public class NetworkExecutor<T> {
+public class AsyncExecutor<T> {
 
 
-    private OnNetworkExecuteCallback<T> callback;
+    private OnExecuteCallback<T> callback;
 
     private Handler handler = new Handler(Looper.getMainLooper()) {
         @Override
@@ -33,11 +31,11 @@ public class NetworkExecutor<T> {
         }
     };
 
-    public static NetworkExecutor getInstance() {
-        return new NetworkExecutor();
+    public static AsyncExecutor getInstance() {
+        return new AsyncExecutor();
     }
 
-    public void execute(OnNetworkExecuteCallback listener) {
+    public void execute(OnExecuteCallback listener) {
         this.callback = listener;
         AsyncHelper.getInstance().execute(new RunTask());
     }

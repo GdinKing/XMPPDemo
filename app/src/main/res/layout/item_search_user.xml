@@ -6,8 +6,8 @@
 
     <ImageView
         android:id="@+id/iv_avatar"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:layout_centerVertical="true"
         android:src="@drawable/ic_default_avatar"/>
 
@@ -30,8 +30,7 @@
             android:maxLength="12"
             android:text="张三"
             android:textColor="@color/black"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:textSize="16sp"/>
 
         <TextView
             android:id="@+id/tv_account"

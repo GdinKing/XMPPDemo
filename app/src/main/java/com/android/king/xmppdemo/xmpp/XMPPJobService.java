@@ -23,11 +23,9 @@ import com.android.king.xmppdemo.util.Logger;
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class XMPPJobService extends JobService {
 
-
     @Override
     public boolean onStartJob(JobParameters params) {
         try {
-            Logger.i("任务执行");
             //判断保活的service是否被杀死
             if (!isServiceRunning(XMPPService.class)) {
                 //重启service
@@ -89,11 +87,9 @@ public class XMPPJobService extends JobService {
         ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
             if (serviceClass.getName().equals(service.service.getClassName())) {
-                Logger.i("服务在运行");
                 return true;
             }
         }
-        Logger.i("服务未运行");
         return false;
     }
 }

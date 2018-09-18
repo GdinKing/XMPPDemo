@@ -1,7 +1,5 @@
 package com.android.king.xmppdemo.entity;
 
-import android.graphics.Bitmap;
-
 import java.io.Serializable;
 
 /***
@@ -15,12 +13,14 @@ public class ChatBean implements Serializable{
     private String title;
     private String target;
     private long time;
-    private int avatar = 0;  //头像资源ID
+    private String avatar;
     private String message;
     private String msgDb;
     private int unreadCount;
     private int type;
     private String action; //对应的操作
+    private int status; //状态：0 普通  1 免打扰
+    private int level;
 
     public int getId() {
         return id;
@@ -46,11 +46,11 @@ public class ChatBean implements Serializable{
         this.time = time;
     }
 
-    public int getAvatar() {
+    public String getAvatar() {
         return avatar;
     }
 
-    public void setAvatar(int avatar) {
+    public void setAvatar(String avatar) {
         this.avatar = avatar;
     }
 
@@ -100,5 +100,21 @@ public class ChatBean implements Serializable{
 
     public void setAction(String action) {
         this.action = action;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
+    public int getLevel() {
+        return level;
+    }
+
+    public void setLevel(int level) {
+        this.level = level;
     }
 }

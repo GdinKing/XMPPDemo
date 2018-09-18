@@ -4,6 +4,7 @@ import android.app.Application;
 
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.db.SQLiteHelper;
+import com.android.king.xmppdemo.util.CrashHandler;
 import com.android.king.xmppdemo.util.SPUtil;
 
 import java.util.ArrayList;
@@ -30,6 +31,11 @@ public class BaseApplication extends Application {
     public void onCreate() {
         super.onCreate();
         instance = this;
+
+        //崩溃日志记录
+        CrashHandler crashHandler = CrashHandler.getInstance();
+        crashHandler.init(this);
+        //初始化Fragmentation
         Fragmentation.builder()
                 .stackViewMode(Fragmentation.NONE)
                 .debug(BuildConfig.DEBUG)
@@ -41,7 +47,6 @@ public class BaseApplication extends Application {
         tableList.add(AppConstants.CREATE_TABLE_CHAT);
         tableList.add(AppConstants.CREATE_TABLE_FRIEND);
         SQLiteHelper.init(this, tableList);
-
     }
 
 
@@ -52,5 +57,15 @@ public class BaseApplication extends Application {
      */
     public static String getCurrentLogin() {
         return SPUtil.getString(instance, AppConstants.SP_KEY_LOGIN_ACCOUNT);
+    }
+
+    /**
+     * 获取当前登录用户密码
+     * 这里是不安全操作，实际开发中并不这样做，我这里为了方便
+     *
+     * @return
+     */
+    public static String getLoginPassword() {
+        return SPUtil.getString(instance, AppConstants.SP_KEY_LOGIN_PASSWORD);
     }
 }

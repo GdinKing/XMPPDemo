@@ -6,9 +6,9 @@ import android.widget.TextView;
 
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.config.AppConstants;
-import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
+import com.android.king.xmppdemo.listener.OnExecuteCallback;
 import com.android.king.xmppdemo.listener.OnTipDialogListener;
-import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.net.AsyncExecutor;
 import com.android.king.xmppdemo.ui.LoginActivity;
 import com.android.king.xmppdemo.util.SPUtil;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
@@ -48,7 +48,7 @@ public class SettingFragment extends BaseFragment implements View.OnClickListene
      * 退出登录
      */
     private void logout() {
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<Void>() {
+        AsyncExecutor.getInstance().execute(new OnExecuteCallback<Void>() {
             @Override
             public Void onExecute() throws Exception {
                 XMPPHelper.getInstance().logout();

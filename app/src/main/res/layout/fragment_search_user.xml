@@ -10,35 +10,23 @@
         android:layout_width="match_parent"
         android:layout_height="@dimen/actionbar_height" />
 
-    <LinearLayout
+
+    <com.android.king.xmppdemo.view.DelEditText
+        android:id="@+id/et_account"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp"
+        android:layout_marginTop="15dp"
+        android:background="@color/white"
+        android:drawableLeft="@drawable/ic_search_small"
         android:gravity="center_vertical"
-        android:layout_margin="15dp"
-        android:orientation="horizontal">
-
-        <EditText
-            android:id="@+id/et_account"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:background="@color/white"
-            android:drawableLeft="@drawable/ic_search_small"
-            android:drawablePadding="5dp"
-            android:gravity="center_vertical"
-            android:hint="账号"
-            android:imeOptions="actionSearch"
-            android:padding="10dp"
-            android:textColor="@color/black"
-            android:textSize="16sp" />
-
-        <Button
-            android:id="@+id/btn_add"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="10dp"
-            android:text="添加" />
-    </LinearLayout>
+        android:hint="账号/昵称/关键字"
+        android:imeOptions="actionSearch"
+        android:padding="5dp"
+        android:textColor="@color/black"
+        android:textSize="16sp" />
 
     <TextView
         android:id="@+id/tv_my_account"

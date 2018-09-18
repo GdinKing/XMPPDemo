@@ -127,6 +127,7 @@ public abstract class BaseActivity extends SupportActivity {
                     }
                 })
                 .setText(msg)
+                .setTextColor(Color.GRAY)
                 .setCanceledOnTouchOutside(false)
                 .setCancelable(false)
                 .setPositive("确定", new View.OnClickListener() {

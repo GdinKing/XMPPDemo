@@ -21,7 +21,7 @@ public class AsyncHelper {
 
     public static AsyncHelper getInstance() {
         if (instance == null) {
-            synchronized (NetworkExecutor.class) {
+            synchronized (AsyncExecutor.class) {
                 if (instance == null) {
                     instance = new AsyncHelper();
                 }

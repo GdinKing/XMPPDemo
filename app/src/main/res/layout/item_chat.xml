@@ -6,11 +6,12 @@
 
     <ImageView
         android:id="@+id/iv_avatar"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:layout_centerVertical="true"
-        android:layout_marginLeft="10dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginLeft="15dp"
+        android:layout_marginTop="15dp"
+        android:scaleType="centerCrop"
         android:src="@drawable/ic_default_avatar" />
 
 
@@ -47,8 +48,7 @@
             android:maxLines="1"
             android:text="sad"
             android:textColor="@color/black"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:textSize="16sp" />
 
         <io.github.rockerhieu.emojicon.EmojiconTextView
             android:id="@+id/tv_message"
@@ -58,9 +58,9 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:text="adsa"
-            android:textColor="@color/gray"
-            android:textSize="16sp"
-            app:emojiconSize="24sp" />
+            android:textColor="@color/text_gray"
+            android:textSize="14sp"
+            app:emojiconSize="20sp" />
     </LinearLayout>
 
     <TextView

@@ -2,6 +2,7 @@ package com.android.king.xmppdemo.adapter;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,8 +11,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.android.king.xmppdemo.R;
+import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.entity.ChatBean;
 import com.android.king.xmppdemo.util.CommonUtil;
+import com.android.king.xmppdemo.util.ImageUtil;
 import com.owater.library.CircleTextView;
 
 import org.jxmpp.jid.DomainBareJid;
@@ -75,11 +78,19 @@ public class ChatAdapter extends BaseAdapter {
         holder.tvName.setText(chatBean.getTitle());
         holder.tvMessage.setText(chatBean.getMessage());
         holder.tvTime.setText(CommonUtil.formatTime(chatBean.getTime()));
-        int avatar = chatBean.getAvatar();
-        if (avatar != 0) {
-            holder.ivAvatar.setImageResource(avatar);
+        int type = chatBean.getType();
+        final String avatar = chatBean.getAvatar();
+        holder.ivAvatar.setTag(R.drawable.ic_default_avatar, avatar);
+
+        final String tag = (String) holder.ivAvatar.getTag(R.drawable.ic_default_avatar);
+        if (type == AppConstants.ChatType.MULTI_INVITE) {
+            holder.ivAvatar.setImageResource(R.drawable.ic_multi_invite);
+        } else if (type == AppConstants.ChatType.SERVER_MSG) {
+            holder.ivAvatar.setImageResource(R.drawable.ic_system_msg);
         } else {
-            holder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
+            if (tag != null && tag.equals(avatar) && !TextUtils.isEmpty(avatar)) {
+                ImageUtil.showImage(mContext, holder.ivAvatar, avatar);
+            }
         }
         holder.badgeView.setText(chatBean.getUnreadCount() > 99 ? "99+" : String.valueOf(chatBean.getUnreadCount()));
         if (chatBean.getUnreadCount() > 0) {

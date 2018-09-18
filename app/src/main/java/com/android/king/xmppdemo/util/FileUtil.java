@@ -2,6 +2,10 @@ package com.android.king.xmppdemo.util;
 
 import android.os.Environment;
 
+import com.android.king.xmppdemo.BaseApplication;
+
+import org.jivesoftware.smack.util.stringencoder.Base64;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -35,26 +39,14 @@ public class FileUtil {
 
 
     public static String saveAvatarToFile(byte[] buf, String fileName) {
-        String filePath = Environment.getExternalStorageDirectory() + "/MicroChat/avatar";
+        String filePath = BaseApplication.getInstance().getCacheDir() + "/MicroChat/avatar";
 
         return byte2File(buf, filePath, fileName);
     }
 
-    public static boolean isAvatarExist(String fileName) {
-        String filePath = Environment.getExternalStorageDirectory() + "/MicroChat/avatar/" + fileName + ".png";
-
-        File file = new File(filePath);
-        if (!file.exists()) {
-            return false;
-        } else if (System.currentTimeMillis() - file.lastModified() > 3 * 24 * 60 * 60 * 1000) {//缓存三天后失效
-            file.delete();
-            return false;
-        }
-        return true;
-    }
-
     public static String getAvatarCache(String fileName) {
-        return Environment.getExternalStorageDirectory() + "/MicroChat/avatar/" + fileName + ".png";
+        fileName = Base64.encode(fileName);
+        return BaseApplication.getInstance().getCacheDir() + "/MicroChat/avatar/" + fileName + ".png";
     }
 
     public static String byte2File(byte[] buf, String filePath, String fileName) {
@@ -68,6 +60,9 @@ public class FileUtil {
             }
             String fullPath = filePath + File.separator + fileName;
             file = new File(fullPath);
+            if (file.exists()) {
+                file.delete();
+            }
             fos = new FileOutputStream(file);
             bos = new BufferedOutputStream(fos);
             bos.write(buf);

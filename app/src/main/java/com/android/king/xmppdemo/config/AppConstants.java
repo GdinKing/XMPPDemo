@@ -8,8 +8,7 @@ package com.android.king.xmppdemo.config;
  */
 public class AppConstants {
 
-    public static final int RECONNECT_DELAY = 5000;//重连延时
-    public static final int HEART_BEAT = 15000;//心跳时间
+    public static final int RECONNECT_DELAY = 10000;//重连延时
 
     public static final String SP_KEY_LOGIN_STATUS = "login_status";
     public static final String SP_KEY_LOGIN_ACCOUNT = "login_account";
@@ -28,6 +27,7 @@ public class AppConstants {
         public static final int SINGLE = 0;  //单聊
         public static final int MULTI = 1;  //群聊
         public static final int MULTI_INVITE = 2;  //群聊邀请
+        public static final int SERVER_MSG = 3;  //系统消息
     }
 
     public static class MessageStatus {
@@ -90,6 +90,7 @@ public class AppConstants {
                     "msgDb TEXT," +
                     "type INTEGER NOT NULL," +
                     "unread INTEGER," +
+                    "level INTEGER," +
                     "time LONG" +
                     ")";
 

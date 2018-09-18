@@ -7,16 +7,21 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.entity.User;
-import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
-import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.listener.OnExecuteCallback;
+import com.android.king.xmppdemo.net.AsyncExecutor;
 import com.android.king.xmppdemo.ui.MessageActivity;
 import com.android.king.xmppdemo.util.ImageUtil;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
+
+import org.jivesoftware.smack.SmackException;
+
+import java.util.List;
 
 
 /**
@@ -33,7 +38,9 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
         return fragment;
     }
 
+    private TextView btnNote;
     private TextView btnSend;
+    private TextView btnAddFriend;
     private TextView tvAccount;
     private TextView tvNick;
     private TextView tvNote; //备注名
@@ -41,6 +48,8 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
 
     private String account;
     private String note;
+
+    private User user;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -62,14 +71,18 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
         btnSend = rootView.findViewById(R.id.btn_send_msg);
         tvNick = rootView.findViewById(R.id.tv_nick);
         tvNote = rootView.findViewById(R.id.tv_name);
+        btnNote = rootView.findViewById(R.id.btn_update_note);
+        btnAddFriend = rootView.findViewById(R.id.btn_add_friend);
         ivAvatar = rootView.findViewById(R.id.iv_avatar);
         btnSend.setOnClickListener(this);
+        btnNote.setOnClickListener(this);
+        btnAddFriend.setOnClickListener(this);
     }
 
     @Override
     protected void initData() {
 
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<User>() {
+        AsyncExecutor.getInstance().execute(new OnExecuteCallback<User>() {
             @Override
             public User onExecute() throws Exception {
                 return XMPPHelper.getInstance().getUserInfo(account);
@@ -81,7 +94,8 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
                     Logger.e(e);
                     return;
                 }
-                if (userInfo != null) {
+                user = userInfo;
+                if (user != null) {
                     String userAccount = userInfo.getAccount().split("@")[0];
                     String nick = userInfo.getNickName();
                     String userNote = userInfo.getNote();
@@ -115,7 +129,7 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
                     tvNote.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
                     ivAvatar.setImageResource(R.drawable.ic_default_avatar);
                 }
-
+                checkIsFriend();
             }
         });
     }
@@ -131,11 +145,101 @@ public class UserFragment extends BaseFragment implements View.OnClickListener {
         switch (view.getId()) {
             case R.id.btn_send_msg:
                 Intent intent = new Intent(getActivity(), MessageActivity.class);
-                intent.putExtra("targetUser",account);
+                intent.putExtra("targetUser", account);
                 intent.putExtra("msgDb", account.split("@")[0]);
-                intent.putExtra("type",AppConstants.ChatType.SINGLE);
+                intent.putExtra("type", AppConstants.ChatType.SINGLE);
+                if (user != null && !TextUtils.isEmpty(user.getNickName())) {
+                    intent.putExtra("title", user.getNickName());
+                } else {
+                    intent.putExtra("title", account.split("@")[0]);
+                }
                 startActivity(intent);
+                break;
+            case R.id.btn_update_note:
+                break;
+            case R.id.btn_add_friend:
+                addFriend(account);
                 break;
         }
     }
+
+    /**
+     * 添加好友
+     *
+     * @param account
+     */
+    private void addFriend(final String account) {
+        try {
+            XMPPHelper.getInstance().applyFriend(account);
+            Toast.makeText(getActivity(), "发送申请成功", Toast.LENGTH_SHORT).show();
+            pop();
+        } catch (SmackException.NotConnectedException ex) {
+            Logger.e(ex);
+            Toast.makeText(getActivity(), "连接服务器失败", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Logger.e(e);
+            Toast.makeText(getActivity(), "发送申请失败", Toast.LENGTH_SHORT).show();
+        }
+//        AsyncExecutor.getInstance().execute(new OnExecuteCallback<Boolean>() {
+//            @Override
+//            public Boolean onExecute() throws Exception {
+//                boolean flag = XMPPHelper.getInstance().applyFriend(account);
+//                return flag;
+//            }
+//
+//            @Override
+//            public void onFinish(Boolean result, Exception e) {
+//                if (e != null) {
+//                    Logger.e(e);
+//                    Toast.makeText(getActivity(), "连接服务器失败", Toast.LENGTH_SHORT).show();
+//                    return;
+//                }
+//                if (result) {
+//                    Toast.makeText(getActivity(), "发送申请成功", Toast.LENGTH_SHORT).show();
+//                    pop();
+//                } else {
+//                    Toast.makeText(getActivity(), "发送申请失败", Toast.LENGTH_SHORT).show();
+//                }
+//            }
+//        });
+
+    }
+
+    /**
+     * 检查是否是好友
+     */
+    public void checkIsFriend() {
+        AsyncExecutor.getInstance().execute(new OnExecuteCallback<List<User>>() {
+            @Override
+            public List<User> onExecute() throws Exception {
+                List<User> userList = XMPPHelper.getInstance().getAllFriends();
+                return userList;
+            }
+
+            @Override
+            public void onFinish(List<User> result, Exception e) {
+                if (e != null) {
+                    return;
+                }
+
+                for (User u : result) {
+                    if (u.getAccount().equals(account)) {
+                        //是好友
+                        switchView(true);
+                        return;
+                    }
+                }
+                switchView(false);
+
+            }
+
+        });
+    }
+
+    private void switchView(boolean isFriend) {
+        btnNote.setVisibility(isFriend ? View.VISIBLE : View.GONE);
+        btnSend.setVisibility(isFriend ? View.VISIBLE : View.GONE);
+        btnAddFriend.setVisibility(isFriend ? View.GONE : View.VISIBLE);
+    }
+
 }

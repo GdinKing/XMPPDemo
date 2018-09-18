@@ -11,6 +11,7 @@ import org.greenrobot.eventbus.EventBus;
 import org.jivesoftware.smack.chat2.Chat;
 import org.jivesoftware.smack.chat2.IncomingChatMessageListener;
 import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.util.stringencoder.Base64;
 import org.jxmpp.jid.EntityBareJid;
 
 /**
@@ -31,7 +32,8 @@ public class IncomingMsgListener implements IncomingChatMessageListener {
         bean.setTime(System.currentTimeMillis());
         bean.setMessage(message.getBody());
         bean.setType(AppConstants.ChatType.SINGLE);
-        bean.setMsgDb(from.toString().split("@")[0]);
+        bean.setMsgDb(Base64.encode(from.toString().split("@")[0]));
+        bean.setLevel(2);
 
         EventBus.getDefault().post(new MessageEvent(bean));
     }

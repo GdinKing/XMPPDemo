@@ -2,13 +2,11 @@ package com.android.king.xmppdemo.util;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.graphics.Rect;
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
 
 import com.android.king.xmppdemo.R;
-import com.android.king.xmppdemo.ui.SoftInputUtil;
 
 /**
  * @author：King

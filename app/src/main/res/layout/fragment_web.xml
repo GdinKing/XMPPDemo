@@ -1,25 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
 
     <include
+        android:id="@+id/actionbar"
         layout="@layout/actionbar"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/actionbar_height" />
+        android:layout_height="@dimen/actionbar_height"
+        android:layout_alignParentTop="true"/>
 
-    <ProgressBar
-        android:layout_width="match_parent"
-        android:layout_height="3dp"
-        style="@style/Base.Widget.AppCompat.ProgressBar.Horizontal"
-        android:visibility="gone"
-        android:id="@+id/pb_progress"/>
 
     <WebView
         android:id="@+id/wv_show"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"></WebView>
+        android:layout_height="match_parent"
+        android:layout_below="@+id/actionbar"></WebView>
 
-</LinearLayout>
+    <ProgressBar
+        android:id="@+id/pb_progress"
+        style="@style/Base.Widget.AppCompat.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_below="@id/actionbar" />
+</RelativeLayout>

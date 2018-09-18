@@ -1,10 +1,12 @@
 package com.android.king.xmppdemo.fragment;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.FragmentActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.king.xmppdemo.BaseApplication;
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.listener.OnBackClickListener;
@@ -39,6 +42,13 @@ public abstract class BaseFragment extends SupportFragment {
     protected TextView tvTitle;
     protected OnBackClickListener backClickListener;
 
+    private FragmentActivity mActivity;
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        mActivity = (FragmentActivity) activity;
+    }
 
     @Nullable
     @Override
@@ -50,7 +60,7 @@ public abstract class BaseFragment extends SupportFragment {
         return rootView;
     }
 
-    protected String getCurrentLogin(){
+    protected String getCurrentLogin() {
         return SPUtil.getString(getActivity(), AppConstants.SP_KEY_LOGIN_ACCOUNT);
     }
 
@@ -62,7 +72,7 @@ public abstract class BaseFragment extends SupportFragment {
             ivBack.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                   onBackPressedSupport();
+                    onBackPressedSupport();
                 }
             });
         } catch (Exception e) {
@@ -99,12 +109,12 @@ public abstract class BaseFragment extends SupportFragment {
     }
 
     protected void showToast(String msg) {
-        Toast.makeText(getActivity(), msg, Toast.LENGTH_SHORT).show();
+        Toast.makeText(BaseApplication.getInstance(), msg, Toast.LENGTH_SHORT).show();
     }
 
 
     protected void showTip(String msg, final OnTipDialogListener listener) {
-        new CircleDialog.Builder(getActivity())
+        new CircleDialog.Builder(mActivity)
                 .setTitle("提示")
                 .setTitleColor(Color.BLACK)
                 .configTitle(new ConfigTitle() {
@@ -135,7 +145,7 @@ public abstract class BaseFragment extends SupportFragment {
     }
 
     protected void showSimpleTip(String msg) {
-        new CircleDialog.Builder(getActivity())
+        new CircleDialog.Builder(mActivity)
                 .setTitle("提示")
                 .setTitleColor(Color.BLACK)
                 .configTitle(new ConfigTitle() {

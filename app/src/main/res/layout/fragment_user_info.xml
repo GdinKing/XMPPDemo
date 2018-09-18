@@ -13,7 +13,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="15dp"
         android:background="@drawable/selector_white_gray"
         android:gravity="center_vertical"
         android:orientation="horizontal">
@@ -86,16 +86,16 @@
     </LinearLayout>
 
     <TextView
-        android:id="@+id/tv_update_note"
+        android:id="@+id/btn_update_note"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/selector_white_radius"
-        android:gravity="center"
-        android:padding="10dp"
-        android:clickable="true"
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp"
         android:layout_marginTop="20dp"
+        android:background="@drawable/selector_white_radius"
+        android:clickable="true"
+        android:gravity="center"
+        android:padding="10dp"
         android:text="修改备注"
         android:textColor="@color/black"
         android:textSize="16sp" />
@@ -105,11 +105,23 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="20dp"
-        android:padding="10dp"
         android:background="@drawable/selector_green_radius"
         android:gravity="center"
+        android:padding="10dp"
         android:text="发消息"
         android:textColor="@color/white"
         android:textSize="18sp" />
 
+    <TextView
+        android:id="@+id/btn_add_friend"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="20dp"
+        android:background="@drawable/selector_green_radius"
+        android:gravity="center"
+        android:padding="10dp"
+        android:visibility="gone"
+        android:text="加为好友"
+        android:textColor="@color/white"
+        android:textSize="18sp" />
 </LinearLayout>

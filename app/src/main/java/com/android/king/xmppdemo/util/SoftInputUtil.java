@@ -1,4 +1,4 @@
-package com.android.king.xmppdemo.ui;
+package com.android.king.xmppdemo.util;
 
 import android.app.Activity;
 import android.content.Context;
@@ -12,9 +12,7 @@ import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.util.SPUtil;
 
 /***
- * 名称：
- * 描述：
- * 最近修改时间：2018年09月10日 15:49分
+ * 软键盘工具类
  * @since 2018-09-10
  * @author king
  */

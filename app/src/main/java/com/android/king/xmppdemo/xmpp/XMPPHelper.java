@@ -2,10 +2,13 @@ package com.android.king.xmppdemo.xmpp;
 
 import android.text.TextUtils;
 
+import com.android.king.xmppdemo.BaseApplication;
 import com.android.king.xmppdemo.BuildConfig;
 import com.android.king.xmppdemo.config.AppConstants;
+import com.android.king.xmppdemo.entity.ChatBean;
 import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.event.FriendEvent;
+import com.android.king.xmppdemo.event.MessageEvent;
 import com.android.king.xmppdemo.listener.IncomingMsgListener;
 import com.android.king.xmppdemo.listener.OnInvitationListener;
 import com.android.king.xmppdemo.util.FileUtil;
@@ -24,6 +27,8 @@ import org.jivesoftware.smack.chat2.ChatManager;
 import org.jivesoftware.smack.filter.AndFilter;
 import org.jivesoftware.smack.filter.StanzaFilter;
 import org.jivesoftware.smack.filter.StanzaTypeFilter;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
@@ -40,6 +45,7 @@ import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.jivesoftware.smackx.muc.MultiUserChatException;
 import org.jivesoftware.smackx.muc.MultiUserChatManager;
 import org.jivesoftware.smackx.offline.OfflineMessageManager;
+import org.jivesoftware.smackx.ping.PingFailedListener;
 import org.jivesoftware.smackx.ping.PingManager;
 import org.jivesoftware.smackx.receipts.DeliveryReceipt;
 import org.jivesoftware.smackx.receipts.DeliveryReceiptManager;
@@ -81,14 +87,19 @@ public class XMPPHelper {
     public static final int SERVER_PORT = 5222;
 
     private static XMPPHelper mInstance = null;
+    public static int reconnectCount = 0; //重连次数
 
     private AbstractXMPPConnection xmppConnection = null;
 
-    private IncomingMsgListener incomingListener = null;
     private OnInvitationListener invitationListener = null;
+    private IncomingMsgListener incomingMsgListener = null;
 
     private XMPPHelper() {
         xmppConnection = openConnection();
+        ProviderManager.addExtensionProvider(DeliveryReceipt.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceipt.Provider());
+        ProviderManager.addExtensionProvider(DeliveryReceiptRequest.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceiptRequest.Provider());
+        DeliveryReceiptManager.getInstanceFor(xmppConnection).setAutoReceiptMode(DeliveryReceiptManager.AutoReceiptMode.always);
+        DeliveryReceiptManager.getInstanceFor(xmppConnection).autoAddDeliveryReceiptRequests();
     }
 
     public static XMPPHelper getInstance() {
@@ -142,9 +153,9 @@ public class XMPPHelper {
             ProviderManager.addIQProvider("vCard", "vcard-temp", new VCardProvider());
             ProviderManager.addIQProvider("query", "jabber:iq:search", new UserSearch.Provider());
 
-
             XMPPTCPConnectionConfiguration config = builder.build();
             conn = new XMPPTCPConnection(config);
+
         } catch (Exception e) {
             Logger.e(e);
         }
@@ -153,17 +164,11 @@ public class XMPPHelper {
 
     /**
      * 登录
-     *
-     * @throws InterruptedException
-     * @throws XMPPException
-     * @throws SmackException
-     * @throws IOException
      */
-    public void login(String username, String password, String resource) throws IOException, InterruptedException, XMPPException, SmackException {
-//        if (isConnected()) {
-//            xmppConnection.disconnect();
-//            Thread.sleep(1000);
-//        }
+    public void login(String username, String password) throws IOException, InterruptedException, XMPPException, SmackException {
+        if(xmppConnection==null){
+            xmppConnection = openConnection();
+        }
         xmppConnection.connect();
 
         SASLAuthentication.blacklistSASLMechanism("ANONYMOUS");
@@ -172,16 +177,12 @@ public class XMPPHelper {
         SASLAuthentication.unBlacklistSASLMechanism("PLAIN");
         SASLAuthentication.blacklistSASLMechanism("SCRAM-SHA-1-PLUS");
 
-        // 自动回复回执方法，如果对方的消息要求回执
-        ProviderManager.addExtensionProvider(DeliveryReceipt.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceipt.Provider());
-        ProviderManager.addExtensionProvider(DeliveryReceiptRequest.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceiptRequest.Provider());
-        DeliveryReceiptManager.getInstanceFor(xmppConnection).autoAddDeliveryReceiptRequests();
-
         ReconnectionManager manager = ReconnectionManager.getInstanceFor(xmppConnection);
-        manager.setFixedDelay(0);//延迟0秒重连
+        manager.setFixedDelay(3);//重连间隔3秒
         manager.enableAutomaticReconnection();
-        xmppConnection.login(username, password, Resourcepart.from(resource));
-        PingManager.getInstanceFor(xmppConnection).setPingInterval(20);//心跳
+        //登录的第三个参数是资源名，用来标识从何处登录，建议设置为一样的，这样可以判断重复登录
+        xmppConnection.login(username, password, Resourcepart.from(SERVER_DOMAIN));
+
     }
 
     /**
@@ -191,13 +192,14 @@ public class XMPPHelper {
      */
     public void reconnect() throws Exception {
         if (isConnected()) {
+            reconnectCount = 0;
             return;
         }
         xmppConnection.connect();
         if (!xmppConnection.isAuthenticated()) {
-            xmppConnection.login();//之前登陆过了，smack会设置账号密码，可看login()的源码
+            xmppConnection.login(BaseApplication.getCurrentLogin(), BaseApplication.getLoginPassword());
         }
-
+        reconnectCount += 1;
     }
 
     /**
@@ -226,28 +228,6 @@ public class XMPPHelper {
         } catch (Exception e) {
             Logger.e(e);
         }
-    }
-
-
-    /**
-     * 修改用户头像
-     *
-     * @param f
-     */
-    public void changeImage(File f) throws XMPPException, IOException, SmackException.NotConnectedException, InterruptedException, SmackException.NoResponseException {
-        VCard vcard = VCardManager.getInstanceFor(xmppConnection).loadVCard();
-        byte[] bytes = FileUtil.getFileBytes(f);
-        String encodedImage = Base64.encodeToString(bytes);
-        String mineType = "image/png";
-        if (f.getAbsolutePath().endsWith("jpg") || f.getAbsolutePath().endsWith("jpeg")) {
-            mineType = "image/jpeg";
-        }
-        vcard.setAvatar(encodedImage, mineType);
-
-        vcard.setField("PHOTO", "<TYPE>" + mineType + "</TYPE><BINVAL>"
-                + encodedImage + "</BINVAL>", true);
-
-        VCardManager.getInstanceFor(xmppConnection).saveVCard(vcard);
     }
 
 
@@ -282,7 +262,7 @@ public class XMPPHelper {
         if (isConnected()) {
             xmppConnection.disconnect();
         }
-        removeMessageListener();
+        xmppConnection = null;
     }
 
     /**
@@ -317,7 +297,7 @@ public class XMPPHelper {
         if (!isLogin()) {
             return;
         }
-        VCard vCard = new VCard();
+        VCard vCard = VCardManager.getInstanceFor(xmppConnection).loadVCard();
         vCard.setNickName(user.getNickName());
         vCard.setFirstName(user.getName());
         vCard.setEmailWork(user.getEmail());
@@ -327,6 +307,25 @@ public class XMPPHelper {
         vCard.setField("avatar", user.getAvatar());
         VCardManager.getInstanceFor(xmppConnection).saveVCard(vCard);
     }
+
+    /**
+     * 修改用户头像
+     *
+     * @param f
+     */
+    public void updateAvatar(File f) throws XMPPException, IOException, SmackException.NotConnectedException, InterruptedException, SmackException.NoResponseException {
+        VCard vCard = VCardManager.getInstanceFor(xmppConnection).loadVCard();
+        byte[] bytes = FileUtil.getFileBytes(f);
+//        String encodedImage = Base64.encodeToString(bytes);
+        String mineType = "image/png";
+        if (f.getAbsolutePath().endsWith("jpg") || f.getAbsolutePath().endsWith("jpeg")) {
+            mineType = "image/jpeg";
+        }
+        vCard.setAvatar(bytes, mineType);
+//        vcard.setField("PHOTO", "<TYPE>" + mineType + "</TYPE><BINVAL>" + encodedImage + "</BINVAL>", true);
+        VCardManager.getInstanceFor(xmppConnection).saveVCard(vCard);
+    }
+
 
     /**
      * 修改密码
@@ -375,18 +374,15 @@ public class XMPPHelper {
      *
      * @return
      */
-    public boolean applyFriend(String account) {
-        try {
-            if (!account.contains("@")) {
-                account = account + "@" + xmppConnection.getServiceName();
-            }
-            Presence presence = new Presence(Presence.Type.subscribe);
-            presence.setTo(account);
-            xmppConnection.sendStanza(presence);
-            return true;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    public void applyFriend(String account) throws SmackException.NotConnectedException, InterruptedException {
+
+        if (!account.contains("@")) {
+            account = account + "@" + xmppConnection.getServiceName();
         }
+        Presence presence = new Presence(Presence.Type.subscribe);
+        presence.setTo(account);
+        xmppConnection.sendStanza(presence);
+
     }
 
     /**
@@ -513,9 +509,7 @@ public class XMPPHelper {
         if (!account.contains("@")) {
             account = account + "@" + xmppConnection.getServiceName();
         }
-        if (FileUtil.isAvatarExist(account)) {
-            return FileUtil.getAvatarCache(account);
-        }
+
         if (!isConnected() || TextUtils.isEmpty(account)) {
             return null;
         }
@@ -523,11 +517,9 @@ public class XMPPHelper {
 
             VCard vcard = VCardManager.getInstanceFor(xmppConnection).loadVCard(JidCreate.entityBareFrom(account));
             if (vcard == null || vcard.getAvatar() == null) {
-
-                Logger.i("获取头像为空");
                 return null;
             }
-            return FileUtil.saveAvatarToFile(vcard.getAvatar(), account + ".png");
+            return FileUtil.saveAvatarToFile(vcard.getAvatar(), Base64.encode(account) + ".png");
 
         } catch (Exception e) {
             Logger.e(e);
@@ -550,6 +542,7 @@ public class XMPPHelper {
         if (!isLogin()) {
             throw new RuntimeException("连接错误");
         }
+
         ChatManager chatManager = ChatManager.getInstanceFor(xmppConnection);
         EntityBareJid targetUser = JidCreate.entityBareFrom(user);
         Chat chat = chatManager.chatWith(targetUser);
@@ -557,6 +550,9 @@ public class XMPPHelper {
         msg.setType(type);
         msg.setSubject(subject);
         msg.setBody(body);
+        msg.setTo(targetUser);
+        // 添加回执请求
+        DeliveryReceiptRequest.addTo(msg);
         chat.send(msg);
     }
 
@@ -565,45 +561,78 @@ public class XMPPHelper {
      * 添加消息监听
      */
     public void addMessageListener() {
-        if (incomingListener == null) {
-            incomingListener = new IncomingMsgListener();
+        if (incomingMsgListener == null) {
+            incomingMsgListener = new IncomingMsgListener();
         }
-        ChatManager.getInstanceFor(xmppConnection).addIncomingListener(incomingListener);
+        ChatManager.getInstanceFor(xmppConnection).addIncomingListener(incomingMsgListener);
     }
 
-
-    /**
-     * 移除监听
-     */
-    public void removeMessageListener() {
-        if (incomingListener == null) {
-            return;
-        }
-        ChatManager.getInstanceFor(xmppConnection).removeIncomingListener(incomingListener);
-    }
 
     /**
      * 响应回复监听
      */
     public void addStanzaListener() {
+        //用户搜索，替换掉响应的xml
+        xmppConnection.addStanzaInterceptor(new StanzaListener() {
+            @Override
+            public void processStanza(Stanza packet) {
+                if (packet instanceof UserSearch) {
+                    List<ExtensionElement> list = packet.getExtensions();
+                    if (list != null) {
+                        for (ExtensionElement element : list) {
+                            if (element.getNamespace().equals("jabber:x:data")) {
+                                packet.removeExtension(element);
+                                packet.addExtension(new FixedQueryXElement(element.toXML().toString()));
+                            }
+                        }
+                    }
+                }
+            }
+        }, new StanzaTypeFilter(IQ.class));
         //条件过滤
-        StanzaFilter filter = new AndFilter(new StanzaTypeFilter(Presence.class));
+        StanzaFilter filter = new StanzaFilter() {
+            @Override
+            public boolean accept(Stanza stanza) {
+                if (stanza instanceof Presence || stanza instanceof Message) {
+                    return true;
+                }
+                return false;
+            }
+        };
         StanzaListener listener = new StanzaListener() {
             @Override
             public void processStanza(Stanza stanza) {
-                Logger.i(stanza.toString());
+                Logger.i("接收：" + stanza.toString());
                 if (stanza instanceof Presence) {
                     Presence p = (Presence) stanza;
-                    Logger.i("收到回复：" + p.getFrom() + "--" + p.getType());
+                    Logger.i("收到Presence：" + p.getFrom() + "--" + p.getType());
                     String from = p.getFrom().toString();
                     String status = p.getType().toString();
                     EventBus.getDefault().post(new FriendEvent(from, status));
+                } else if (stanza instanceof Message) {
+                    //消息回执
+                    Message m = (Message) stanza;
+                    String type = m.getType().name();
+                    String from = m.getFrom().asUnescapedString();
+                    if (from.equals(xmppConnection.getServiceName().toString()) && "normal".equals(type)) {
+                        Logger.i("系统消息");
+                        ChatBean chatBean = new ChatBean();
+                        chatBean.setTitle("系统消息");
+                        chatBean.setTarget(m.getFrom().toString());
+                        chatBean.setTime(System.currentTimeMillis());
+                        chatBean.setMessage(m.getBody());
+                        chatBean.setUnreadCount(1);
+                        chatBean.setLevel(1);
+                        chatBean.setType(AppConstants.ChatType.SERVER_MSG);
+                        EventBus.getDefault().post(new MessageEvent(chatBean));
+                    }
                 }
+
             }
 
         };
-
         xmppConnection.addAsyncStanzaListener(listener, filter);
+
     }
 
 
@@ -804,6 +833,25 @@ public class XMPPHelper {
             invitationListener = new OnInvitationListener();
         }
         MultiUserChatManager.getInstanceFor(xmppConnection).addInvitationListener(invitationListener);
+    }
+
+    /**
+     * 心跳连接
+     *
+     * @param listener
+     */
+    public void addPing(PingFailedListener listener) {
+        if (!isConnected()) {
+            return;
+        }
+        // 心跳间隔不能设的过小，参见：https://blog.csdn.net/nalanrumeng1113/article/details/53959000
+        PingManager.getInstanceFor(xmppConnection).setPingInterval(90);
+        PingManager.getInstanceFor(xmppConnection).registerPingFailedListener(listener);
+        try {
+            PingManager.getInstanceFor(xmppConnection).pingMyServer();
+        } catch (Exception e) {
+            Logger.e(e);
+        }
     }
 
     /**

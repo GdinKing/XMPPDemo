@@ -20,12 +20,15 @@ import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.db.SQLiteHelper;
 import com.android.king.xmppdemo.entity.Apply;
 import com.android.king.xmppdemo.event.FriendEvent;
-import com.android.king.xmppdemo.event.ReconnectErrorEvent;
+import com.android.king.xmppdemo.event.LoginEvent;
+import com.android.king.xmppdemo.listener.OnExecuteCallback;
+import com.android.king.xmppdemo.net.AsyncExecutor;
 import com.android.king.xmppdemo.ui.LoginActivity;
 import com.android.king.xmppdemo.util.CommonUtil;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.util.SPUtil;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
+import com.android.king.xmppdemo.xmpp.XMPPService;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -123,9 +126,52 @@ public class HomeFragment extends SupportFragment implements View.OnClickListene
         tvTitle.setText("微聊");
         tabMessage.setSelected(true);
         lastSelect = tabMessage;
+
+        initData();
         return rootView;
     }
 
+    private void initData() {
+        //判断是否登录过
+        boolean isLogin = SPUtil.getBoolean(getActivity(), AppConstants.SP_KEY_LOGIN_STATUS, false);
+        if (isLogin) {
+            if (!XMPPHelper.getInstance().isLogin()) {//账号已经登录过，但xmpp未登录
+                Logger.i("未登录");
+                final String account = SPUtil.getString(getActivity(), AppConstants.SP_KEY_LOGIN_ACCOUNT);
+                final String password = SPUtil.getString(getActivity(), AppConstants.SP_KEY_LOGIN_PASSWORD);
+                AsyncExecutor.getInstance().execute(new OnExecuteCallback() {
+                    @Override
+                    public Object onExecute() throws Exception {
+                        XMPPHelper.getInstance().login(account, password);
+                        return null;
+                    }
+
+                    @Override
+                    public void onFinish(Object result, Exception e) {
+                        if (e != null) {
+                            Logger.e(e);
+                            startActivity(new Intent(getActivity(), LoginActivity.class));
+                            getActivity().finish();
+                            return;
+                        }
+                        addListener();
+                    }
+                });
+            } else {
+                addListener();
+            }
+        }
+    }
+
+    /**
+     * 监听器
+     */
+    private void addListener() {
+        Intent intent = new Intent(getActivity(), XMPPService.class);
+        getActivity().startService(intent);
+        XMPPHelper.getInstance().addListeners();
+        EventBus.getDefault().post(new LoginEvent(true));
+    }
 
     @Override
     public void onClick(View v) {
@@ -191,9 +237,22 @@ public class HomeFragment extends SupportFragment implements View.OnClickListene
             case AppConstants.StanzaStatus.UNAVAILABLE:
 
                 if (from.split("@")[0].equals(getCurrentLogin())) {
-                    //如果是自身离线了，则重新上线，否则会断开闲置连接
-                    XMPPHelper.getInstance().changeStatus(AppConstants.StanzaStatus.AVAILABLE);
-                    XMPPHelper.getInstance().addListeners();
+                    AsyncExecutor.getInstance().execute(new OnExecuteCallback() {
+                        @Override
+                        public Object onExecute() throws Exception {
+
+                            XMPPHelper.getInstance().reconnect();
+                            return null;
+                        }
+
+                        @Override
+                        public void onFinish(Object result, Exception e) {
+                            if (e != null) {
+                                return;
+                            }
+                            XMPPHelper.getInstance().addListeners();
+                        }
+                    });
                 }
                 break;
         }
@@ -226,19 +285,6 @@ public class HomeFragment extends SupportFragment implements View.OnClickListene
     }
 
 
-    /**
-     * 重连失败回调
-     *
-     * @param event
-     */
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onReconnectErrorEvent(ReconnectErrorEvent event) {
-        XMPPHelper.getInstance().logout();
-        startActivity(new Intent(getActivity(), LoginActivity.class));
-        getActivity().finish();
-    }
-
-
     private void showAddMenu() {
         View view = LayoutInflater.from(getActivity()).inflate(R.layout.popup_layout_add_menu, null);
         TextView tvAddFrient = view.findViewById(R.id.tv_add_friend);
@@ -249,7 +295,7 @@ public class HomeFragment extends SupportFragment implements View.OnClickListene
             @Override
             public void onClick(View v) {
                 popupWindow.dismiss();
-                start(AddFriendFragment.newInstance());
+                start(SearchUserFragment.newInstance());
             }
         });
 
@@ -318,7 +364,6 @@ public class HomeFragment extends SupportFragment implements View.OnClickListene
                 .setGravityOffset(10, 0, true)
                 .setBadgeNumber(count);
     }
-
 
 
 }

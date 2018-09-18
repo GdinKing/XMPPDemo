@@ -6,18 +6,17 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.config.AppConstants;
-import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
-import com.android.king.xmppdemo.net.NetworkExecutor;
-import com.android.king.xmppdemo.util.CommonUtil;
+import com.android.king.xmppdemo.listener.OnExecuteCallback;
+import com.android.king.xmppdemo.net.AsyncExecutor;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.util.SPUtil;
+import com.android.king.xmppdemo.util.SoftInputUtil;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
 
 import org.jivesoftware.smack.AbstractXMPPConnection;
@@ -73,7 +72,7 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
         //权限申请
         List<PermissionItem> permissionItems = new ArrayList<>();
         permissionItems.add(new PermissionItem(Manifest.permission.WRITE_EXTERNAL_STORAGE, "存储", R.drawable.permission_ic_storage));
-        permissionItems.add(new PermissionItem(Manifest.permission.GET_TASKS, "设备", R.drawable.permission_ic_micro_phone));
+        permissionItems.add(new PermissionItem(Manifest.permission.READ_PHONE_STATE, "设备", R.drawable.permission_ic_phone));
         HiPermission.create(this)
                 .permissions(permissionItems)
                 .checkMutiPermission(new PermissionCallback() {
@@ -124,7 +123,7 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
      */
     private void doLogin(final String account, final String password) {
         showLoading("登录中...");
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
+        AsyncExecutor.getInstance().execute(new OnExecuteCallback() {
             @Override
             public Object onExecute() throws Exception {
 
@@ -141,7 +140,6 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
                     @Override
                     public void authenticated(XMPPConnection xmppConnection, boolean b) {
                         mHandler.sendEmptyMessage(200);
-                        XMPPHelper.getInstance().changeStatus(AppConstants.StanzaStatus.AVAILABLE);
                     }
 
                     @Override
@@ -169,9 +167,7 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
 
                     }
                 });
-                XMPPHelper.getInstance().login(account, password, CommonUtil.getDeviceId(LoginActivity.this));
-
-
+                XMPPHelper.getInstance().login(account, password);
                 return null;
             }
 
@@ -199,10 +195,10 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
         @Override
         public void handleMessage(Message msg) {
             if (msg.what == 200) {
+                XMPPHelper.getInstance().changeStatus(AppConstants.StanzaStatus.AVAILABLE);
                 SPUtil.setBoolean(LoginActivity.this, AppConstants.SP_KEY_LOGIN_STATUS, true);
                 SPUtil.setString(LoginActivity.this, AppConstants.SP_KEY_LOGIN_ACCOUNT, etAccount.getText().toString());
                 SPUtil.setString(LoginActivity.this, AppConstants.SP_KEY_LOGIN_PASSWORD, etPassword.getText().toString());
-
                 Intent it = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(it);
                 finish();

@@ -1,8 +1,5 @@
 package com.android.king.xmppdemo.listener;
 
-import android.graphics.BitmapFactory;
-
-import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.entity.ChatBean;
 import com.android.king.xmppdemo.event.InviteEvent;
@@ -35,8 +32,8 @@ public class OnInvitationListener implements InvitationListener {
         chatBean.setTarget(entityJid.toString());
         chatBean.setTime(System.currentTimeMillis());
         chatBean.setMessage(s);
-        chatBean.setAvatar(R.mipmap.ic_launcher);
         chatBean.setUnreadCount(1);
+        chatBean.setLevel(1);
         chatBean.setType(AppConstants.ChatType.MULTI_INVITE);
         EventBus.getDefault().post(new InviteEvent(chatBean));
     }

@@ -15,8 +15,8 @@ import android.widget.TextView;
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.event.UpdateInfoEvent;
-import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
-import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.listener.OnExecuteCallback;
+import com.android.king.xmppdemo.net.AsyncExecutor;
 import com.android.king.xmppdemo.util.GlideUtil;
 import com.android.king.xmppdemo.util.ImageUtil;
 import com.android.king.xmppdemo.util.Logger;
@@ -118,7 +118,7 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
     @Override
     protected void initData() {
 
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<User>() {
+        AsyncExecutor.getInstance().execute(new OnExecuteCallback<User>() {
             @Override
             public User onExecute() throws Exception {
                 return XMPPHelper.getInstance().getUserInfo(user.getAccount());
@@ -382,7 +382,7 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
      */
     private void uploadAvatar(final String filePath) {
         showProgress("上传中");
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
+        AsyncExecutor.getInstance().execute(new OnExecuteCallback() {
             @Override
             public Object onExecute() throws Exception {
                 File f = new File(filePath);
@@ -390,7 +390,7 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
                     throw new RuntimeException("图片不存在");
                 }
                 Logger.i(filePath);
-                XMPPHelper.getInstance().changeImage(f);
+                XMPPHelper.getInstance().updateAvatar(f);
                 return null;
             }
 
@@ -416,7 +416,7 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
 
      */
     private void updateInfo(final User userInfo, final int type) {
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback() {
+        AsyncExecutor.getInstance().execute(new OnExecuteCallback() {
             @Override
             public Object onExecute() throws Exception {
 

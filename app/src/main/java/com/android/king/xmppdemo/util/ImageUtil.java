@@ -13,8 +13,12 @@ import com.bumptech.glide.request.RequestOptions;
 public class ImageUtil {
 
     public static void showImage(Context context, ImageView imageView, String path) {
+        if (context == null) {
+            return;
+        }
         Glide.with(context).load(path).into(imageView);
     }
+
     public static void showImage(Context context, ImageView imageView, byte[] bytes) {
         Glide.with(context).load(bytes).into(imageView);
     }

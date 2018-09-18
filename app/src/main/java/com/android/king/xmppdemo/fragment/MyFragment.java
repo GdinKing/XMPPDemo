@@ -13,8 +13,8 @@ import com.android.king.xmppdemo.BaseApplication;
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.event.UpdateInfoEvent;
-import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
-import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.listener.OnExecuteCallback;
+import com.android.king.xmppdemo.net.AsyncExecutor;
 import com.android.king.xmppdemo.util.ImageUtil;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
@@ -76,7 +76,7 @@ public class MyFragment extends SupportFragment implements View.OnClickListener 
 
     public void loadData() {
         final String account = BaseApplication.getCurrentLogin();
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<User>() {
+        AsyncExecutor.getInstance().execute(new OnExecuteCallback<User>() {
             @Override
             public User onExecute() throws Exception {
                 isLoading = true;
@@ -94,7 +94,7 @@ public class MyFragment extends SupportFragment implements View.OnClickListener 
                 setView(userInfo);
                 if (user == null) {
                     user = new User();
-                    user.setAccount(account);
+                    user.setAccount(account.split("@")[0]);
                     user.setName(account.split("@")[0]);
                     user.setNickName(account.split("@")[0]);
                 }
@@ -110,7 +110,7 @@ public class MyFragment extends SupportFragment implements View.OnClickListener 
             String avatar = userInfo.getAvatar();
             int sex = userInfo.getSex();
             if (!TextUtils.isEmpty(userAccount)) {
-                tvAccount.setText("账号：" + userAccount);
+                tvAccount.setText("账号：" + userAccount.split("@")[0]);
             } else {
                 tvAccount.setText("账号：" + account);
             }

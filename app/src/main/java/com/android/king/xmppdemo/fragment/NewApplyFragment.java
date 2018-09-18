@@ -12,8 +12,8 @@ import com.android.king.xmppdemo.db.SQLiteHelper;
 import com.android.king.xmppdemo.entity.Apply;
 import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.event.AgreeEvent;
-import com.android.king.xmppdemo.listener.OnNetworkExecuteCallback;
-import com.android.king.xmppdemo.net.NetworkExecutor;
+import com.android.king.xmppdemo.listener.OnExecuteCallback;
+import com.android.king.xmppdemo.net.AsyncExecutor;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
 
@@ -75,7 +75,7 @@ public class NewApplyFragment extends BaseFragment {
 
     private void loadData() {
         dataList.clear();
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<Void>() {
+        AsyncExecutor.getInstance().execute(new OnExecuteCallback<Void>() {
             @Override
             public Void onExecute() throws Exception {
                 Cursor cursor = SQLiteHelper.getInstance(getActivity()).query(AppConstants.TABLE_APPLY, null, null, null, null, null, null);
@@ -113,7 +113,7 @@ public class NewApplyFragment extends BaseFragment {
 
 
     private void acceptRejectApply(final String from, final int flag) {
-        NetworkExecutor.getInstance().execute(new OnNetworkExecuteCallback<Integer>() {
+        AsyncExecutor.getInstance().execute(new OnExecuteCallback<Integer>() {
             @Override
             public Integer onExecute() throws Exception {
                 if (flag == 0) {
