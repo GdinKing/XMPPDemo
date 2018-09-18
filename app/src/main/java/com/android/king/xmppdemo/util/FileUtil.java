@@ -44,6 +44,20 @@ public class FileUtil {
         return byte2File(buf, filePath, fileName);
     }
 
+    public static boolean isAvatarExist(String fileName) {
+        String filePath = BaseApplication.getInstance().getCacheDir() + "/MicroChat/avatar/" + fileName + ".png";
+        File f = new File(filePath);
+        if(f.exists()) {
+            if (System.currentTimeMillis() - f.lastModified() > 3 * 60 * 1000) {
+                f.delete();
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+
     public static String getAvatarCache(String fileName) {
         fileName = Base64.encode(fileName);
         return BaseApplication.getInstance().getCacheDir() + "/MicroChat/avatar/" + fileName + ".png";

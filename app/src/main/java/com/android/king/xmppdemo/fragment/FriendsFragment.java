@@ -81,6 +81,7 @@ public class FriendsFragment extends SupportFragment implements View.OnClickList
         return v;
     }
 
+
     @Override
     public void onDetach() {
         EventBus.getDefault().unregister(this);

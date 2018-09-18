@@ -80,15 +80,13 @@ public class ChatAdapter extends BaseAdapter {
         holder.tvTime.setText(CommonUtil.formatTime(chatBean.getTime()));
         int type = chatBean.getType();
         final String avatar = chatBean.getAvatar();
-        holder.ivAvatar.setTag(R.drawable.ic_default_avatar, avatar);
 
-        final String tag = (String) holder.ivAvatar.getTag(R.drawable.ic_default_avatar);
         if (type == AppConstants.ChatType.MULTI_INVITE) {
             holder.ivAvatar.setImageResource(R.drawable.ic_multi_invite);
         } else if (type == AppConstants.ChatType.SERVER_MSG) {
             holder.ivAvatar.setImageResource(R.drawable.ic_system_msg);
         } else {
-            if (tag != null && tag.equals(avatar) && !TextUtils.isEmpty(avatar)) {
+            if (!TextUtils.isEmpty(avatar)) {
                 ImageUtil.showImage(mContext, holder.ivAvatar, avatar);
             }
         }

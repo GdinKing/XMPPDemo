@@ -1,6 +1,7 @@
 package com.android.king.xmppdemo.adapter;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +13,7 @@ import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.config.AppConstants;
 import com.android.king.xmppdemo.entity.MessageBean;
 import com.android.king.xmppdemo.util.CommonUtil;
+import com.android.king.xmppdemo.util.ImageUtil;
 
 import java.util.List;
 
@@ -178,7 +180,7 @@ public class MessageAdapter extends BaseAdapter {
         textHolder.tvName.setText(bean.getFrom());
         textHolder.tvMessage.setText(bean.getContent());
         textHolder.tvTime.setText(CommonUtil.formatMsgTime(bean.getTime()));
-        textHolder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
+        ImageUtil.showImage(mContext,textHolder.ivAvatar,bean.getAvatar(),R.drawable.ic_default_avatar);
         initTime = bean.getTime();
     }
 
@@ -197,8 +199,7 @@ public class MessageAdapter extends BaseAdapter {
         imageHolder.tvName.setText(bean.getFrom());
         imageHolder.ivImage.setImageResource(R.drawable.ic_default_avatar);
         imageHolder.tvTime.setText(CommonUtil.formatMsgTime(bean.getTime()));
-        imageHolder.ivAvatar.setImageResource(R.drawable.ic_default_avatar);
-
+        ImageUtil.showImage(mContext,imageHolder.ivAvatar,bean.getAvatar(),R.drawable.ic_default_avatar);
     }
 
 

@@ -18,6 +18,7 @@ public class MessageBean implements Serializable{
     private int category;
     private int status;
     private String msgDb;
+    private String avatar;
 
 
     public int getId() {
@@ -90,5 +91,13 @@ public class MessageBean implements Serializable{
 
     public void setStatus(int status) {
         this.status = status;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 }

@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.TextView;
@@ -63,6 +65,7 @@ public class ChatFragment extends BaseFragment implements AdapterView.OnItemClic
     private List<ChatBean> dataList = new ArrayList<>();
     private List<Message> offlineMessage = new ArrayList<>();
 
+
     @Override
     protected int getContentView() {
         return R.layout.fragment_chat;
@@ -76,6 +79,7 @@ public class ChatFragment extends BaseFragment implements AdapterView.OnItemClic
         EventBus.getDefault().register(this);
 
     }
+
 
     @Override
     public void onDestroy() {
@@ -120,7 +124,7 @@ public class ChatFragment extends BaseFragment implements AdapterView.OnItemClic
             public boolean onMenuItemClick(int position, SwipeMenu menu, int index) {
                 switch (index) {
                     case 0:
-                        ChatBean bean = dataList.get(position);
+                        ChatBean bean = (ChatBean) chatAdapter.getItem(position);
                         bean.setLevel(0);
                         updateChatDb(bean);
                         loadData();
@@ -132,9 +136,11 @@ public class ChatFragment extends BaseFragment implements AdapterView.OnItemClic
                 return false;
             }
         });
+
         loadData();
 //        getOfflineMessage();  因为我的openfire装了一个离线消息的插件，所以这里不需要获取离线消息，登录后插件会自动发送离线消息给客户端
     }
+
 
     private void deleteTip(final int position) {
         showTip("是否删除该聊天？", new OnTipDialogListener() {
@@ -197,15 +203,19 @@ public class ChatFragment extends BaseFragment implements AdapterView.OnItemClic
                 Cursor cursor = SQLiteHelper.getInstance(getActivity()).rawQuery("select * from " + AppConstants.TABLE_CHAT+" order by level asc", null);
                 while (cursor.moveToNext()) {
                     ChatBean bean = new ChatBean();
+                    String fromUser = cursor.getString(cursor.getColumnIndex("fromUser"));
                     bean.setId(cursor.getInt(cursor.getColumnIndex("id")));
                     bean.setType(cursor.getInt(cursor.getColumnIndex("type")));
                     bean.setTitle(cursor.getString(cursor.getColumnIndex("title")));
                     bean.setMessage(cursor.getString(cursor.getColumnIndex("message")));
                     bean.setTime(cursor.getLong(cursor.getColumnIndex("time")));
-                    bean.setTarget(cursor.getString(cursor.getColumnIndex("fromUser")));
+                    bean.setTarget(fromUser);
                     bean.setMsgDb(cursor.getString(cursor.getColumnIndex("msgDb")));
                     bean.setUnreadCount(cursor.getInt(cursor.getColumnIndex("unread")));
                     bean.setLevel(cursor.getInt(cursor.getColumnIndex("level")));
+                    bean.setAvatar(XMPPHelper.getInstance().getVcardAvatar(fromUser));
+
+                    Logger.i("头像："+bean.getAvatar());
                     dataList.add(bean);
                 }
                 return null;

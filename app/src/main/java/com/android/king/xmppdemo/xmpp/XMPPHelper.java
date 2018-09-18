@@ -96,10 +96,6 @@ public class XMPPHelper {
 
     private XMPPHelper() {
         xmppConnection = openConnection();
-        ProviderManager.addExtensionProvider(DeliveryReceipt.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceipt.Provider());
-        ProviderManager.addExtensionProvider(DeliveryReceiptRequest.ELEMENT, DeliveryReceipt.NAMESPACE, new DeliveryReceiptRequest.Provider());
-        DeliveryReceiptManager.getInstanceFor(xmppConnection).setAutoReceiptMode(DeliveryReceiptManager.AutoReceiptMode.always);
-        DeliveryReceiptManager.getInstanceFor(xmppConnection).autoAddDeliveryReceiptRequests();
     }
 
     public static XMPPHelper getInstance() {
@@ -107,9 +103,11 @@ public class XMPPHelper {
             synchronized (XMPPHelper.class) {
                 if (mInstance == null) {
                     mInstance = new XMPPHelper();
+
                 }
             }
         }
+
         return mInstance;
     }
 
@@ -166,10 +164,15 @@ public class XMPPHelper {
      * 登录
      */
     public void login(String username, String password) throws IOException, InterruptedException, XMPPException, SmackException {
-        if(xmppConnection==null){
+        if (isLogin()) {
+            return;
+        }
+        if (xmppConnection == null) {
             xmppConnection = openConnection();
         }
-        xmppConnection.connect();
+        if (!isConnected()) {
+            xmppConnection.connect();
+        }
 
         SASLAuthentication.blacklistSASLMechanism("ANONYMOUS");
         SASLAuthentication.blacklistSASLMechanism("CRAM-MD5");
@@ -509,7 +512,9 @@ public class XMPPHelper {
         if (!account.contains("@")) {
             account = account + "@" + xmppConnection.getServiceName();
         }
-
+        if (FileUtil.isAvatarExist(account)) {
+            return FileUtil.getAvatarCache(account);
+        }
         if (!isConnected() || TextUtils.isEmpty(account)) {
             return null;
         }

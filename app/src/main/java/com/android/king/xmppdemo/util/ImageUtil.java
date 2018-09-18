@@ -19,6 +19,16 @@ public class ImageUtil {
         Glide.with(context).load(path).into(imageView);
     }
 
+    public static void showImage(Context context, ImageView imageView, String path, int defaultImage) {
+        if (context == null) {
+            return;
+        }
+        RequestOptions opt = new RequestOptions();
+        opt.error(defaultImage);
+        opt.placeholder(defaultImage);
+        Glide.with(context).load(path).apply(opt).into(imageView);
+    }
+
     public static void showImage(Context context, ImageView imageView, byte[] bytes) {
         Glide.with(context).load(bytes).into(imageView);
     }

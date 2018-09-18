@@ -108,7 +108,9 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 if (event.getAction() == MotionEvent.ACTION_UP) {
-                    hidePanel(false);
+                    if (panelRoot.isShown()) {
+                        hidePanel(false);
+                    }
                 }
                 return false;
             }
@@ -140,7 +142,9 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
         lvMessage.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                hidePanel(false);
+                if (panelRoot.isShown()) {
+                    hidePanel(false);
+                }
                 return false;
             }
         });
@@ -196,6 +200,7 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
                     bean.setTo(to);
                     bean.setCategory(category);
                     bean.setMsgDb(msgDb);
+                    bean.setAvatar(XMPPHelper.getInstance().getVcardAvatar(from));
                     dataList.add(bean);
                 }
                 return null;
@@ -243,28 +248,23 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
                 break;
             case R.id.iv_emoji:
                 if(isAddShow){
-                    ivEmoji.setImageResource(R.drawable.ic_keyboard);
                     showPanel(TYPE_EMOJI);
                     return;
                 }
                 if (panelRoot.isShown()) {
-                    ivEmoji.setImageResource(R.drawable.ic_emoji);
                     hidePanel(true);
                 } else {
-                    ivEmoji.setImageResource(R.drawable.ic_keyboard);
                     showPanel(TYPE_EMOJI);
                 }
                 break;
             case R.id.iv_add:
                 if(isEmojiShow){
-                    ivEmoji.setImageResource(R.drawable.ic_emoji);
                     showPanel(TYPE_ADD);
                     return;
                 }
                 if (panelRoot.isShown()) {
                     hidePanel(true);
                 } else {
-                    ivEmoji.setImageResource(R.drawable.ic_emoji);
                     showPanel(TYPE_ADD);
                 }
                 break;
@@ -292,6 +292,7 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
         AsyncExecutor.getInstance().execute(new OnExecuteCallback() {
             @Override
             public Object onExecute() throws Exception {
+                bean.setAvatar(XMPPHelper.getInstance().getVcardAvatar(getCurrentLogin()));
                 XMPPHelper.getInstance().sendUserMsg(Message.Type.chat, "", targetUser, msg);
                 return null;
             }
@@ -318,6 +319,7 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
     private void hidePanel(boolean showKeyBoard) {
         isEmojiShow = false;
         isAddShow = false;
+        ivEmoji.setImageResource(R.drawable.ic_emoji);
         if (panelRoot.isShown()) {
             if (showKeyBoard) {
                 panelRoot.setVisibility(View.GONE);
@@ -350,6 +352,7 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
      * 显示emoji表情
      */
     private void showEmoji() {
+        ivEmoji.setImageResource(R.drawable.ic_keyboard);
         getSupportFragmentManager().beginTransaction().replace(R.id.panel_root, EmojiconsFragment.newInstance(false)).commit();
         isEmojiShow = true;
         isAddShow = false;
@@ -359,6 +362,7 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
      * 显示功能栏
      */
     private void showAdd() {
+        ivEmoji.setImageResource(R.drawable.ic_emoji);
         getSupportFragmentManager().beginTransaction().replace(R.id.panel_root, addFragment).commit();
         isAddShow = true;
         isEmojiShow = false;
