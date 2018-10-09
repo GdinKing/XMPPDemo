@@ -1,10 +1,13 @@
 package com.android.king.xmppdemo.util;
 
 import android.app.Activity;
+import android.content.Context;
 import android.widget.ImageView;
 
+import com.android.king.albumpicker.util.ImageLoader;
+import com.android.king.xmppdemo.R;
 import com.bumptech.glide.Glide;
-import com.lzy.imagepicker.loader.ImageLoader;
+import com.bumptech.glide.request.RequestOptions;
 
 /***
  * 名称：
@@ -16,17 +19,14 @@ import com.lzy.imagepicker.loader.ImageLoader;
 public class GlideUtil implements ImageLoader {
 
     @Override
-    public void displayImage(Activity activity, String path, ImageView imageView, int width, int height) {
-        Glide.with(activity).load(path).into(imageView);
-    }
+    public void showImage(Context context, String path, ImageView imageView) {
 
-    @Override
-    public void displayImagePreview(Activity activity, String path, ImageView imageView, int width, int height) {
-        Glide.with(activity).load(path).into(imageView);
-    }
+        RequestOptions options = new RequestOptions();
+        options.placeholder(R.drawable.album_ic_placeholder);
+        options.fitCenter();
+        Glide.with(context).load(path) //Glide
+                .apply(options)
+                .into(imageView);
 
-    @Override
-    public void clearMemoryCache() {
-        //这里是清除缓存的方法,根据需要自己实现
     }
 }

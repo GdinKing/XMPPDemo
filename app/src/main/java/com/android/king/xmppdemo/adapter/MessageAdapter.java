@@ -37,7 +37,7 @@ public class MessageAdapter extends BaseAdapter {
     private Context mContext;
     private LayoutInflater mInflater;
     private long initTime;
-    private OnResendLitener listener;
+    private OnResendListener listener;
 
 
     public MessageAdapter(Context mContext, List<MessageBean> dataList) {
@@ -148,24 +148,6 @@ public class MessageAdapter extends BaseAdapter {
         initTime = System.currentTimeMillis();
     }
 
-    /**
-     * 是否存在与当前用户的对话
-     *
-     * @param user
-     * @return
-     */
-    public int isExist(String user) {
-        if (dataList == null) {
-            return -1;
-        }
-        for (int i = 0; i < dataList.size(); i++) {
-            MessageBean bean = dataList.get(i);
-            if (bean.getFrom().equals(user)) {
-                return i;
-            }
-        }
-        return -1;
-    }
 
     private void setTextHolder(TextHolder textHolder, MessageBean bean) {
         if (textHolder == null) {
@@ -233,11 +215,11 @@ public class MessageAdapter extends BaseAdapter {
         }
     }
 
-    public void setOnResendListener(OnResendLitener listener) {
+    public void setOnResendListener(OnResendListener listener) {
         this.listener = listener;
     }
 
-    interface OnResendLitener {
+    interface OnResendListener {
         void onResend(int position);
     }
 }

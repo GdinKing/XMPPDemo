@@ -1,17 +1,21 @@
 package com.android.king.xmppdemo.fragment;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.android.king.albumpicker.AlbumPicker;
+import com.android.king.albumpicker.util.AlbumConstant;
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.entity.User;
 import com.android.king.xmppdemo.event.UpdateInfoEvent;
@@ -21,10 +25,6 @@ import com.android.king.xmppdemo.util.GlideUtil;
 import com.android.king.xmppdemo.util.ImageUtil;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
-import com.lzy.imagepicker.ImagePicker;
-import com.lzy.imagepicker.bean.ImageItem;
-import com.lzy.imagepicker.ui.ImageGridActivity;
-import com.lzy.imagepicker.view.CropImageView;
 import com.mylhyl.circledialog.CircleDialog;
 import com.mylhyl.circledialog.callback.ConfigButton;
 import com.mylhyl.circledialog.callback.ConfigItems;
@@ -102,17 +102,7 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
         btnSex.setOnClickListener(this);
         btnSign.setOnClickListener(this);
 
-        ImagePicker imagePicker = ImagePicker.getInstance();
-        imagePicker.setImageLoader(new GlideUtil());   //设置图片加载器
-        imagePicker.setShowCamera(true);  //显示拍照按钮
-        imagePicker.setCrop(true);        //允许裁剪（单选才有效）
-        imagePicker.setSaveRectangle(true); //是否按矩形区域保存
-        imagePicker.setMultiMode(false);
-        imagePicker.setStyle(CropImageView.Style.RECTANGLE);  //裁剪框的形状
-        imagePicker.setFocusWidth(500);   //裁剪框的宽度。单位像素（圆形自动取宽高最小值）
-        imagePicker.setFocusHeight(500);  //裁剪框的高度。单位像素（圆形自动取宽高最小值）
-        imagePicker.setOutPutX(500);//保存文件的宽度。单位像素
-        imagePicker.setOutPutY(500);//保存文件的高度。单位像素
+
     }
 
     @Override
@@ -189,9 +179,7 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
 
                     @Override
                     public void onGuarantee(String permission, int position) {
-                        Intent intent = new Intent(getActivity(), ImageGridActivity.class);
-                        intent.putExtra(ImageGridActivity.EXTRAS_TAKE_PICKERS, true); // 是否是直接打开相机
-                        startActivityForResult(intent, 100);
+
                     }
                 });
     }
@@ -240,7 +228,13 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
                         if (position == 0) {
                             checkCameraPermission();
                         } else if (position == 1) {
-                            Intent intent = new Intent(getActivity(), ImageGridActivity.class);
+                            Intent intent = AlbumPicker.getInstance(getActivity())
+                                    .setImageLoader(new GlideUtil())  //设置图片加载器
+                                    .setSelectType(AlbumConstant.TYPE_IMAGE) //选择类型 TYPE_ALL:图片和视频 TYPE_IMAGE:图片 TYPE_VIDEO:视频
+                                    .setMode(AlbumConstant.MODE_SINGLE) //选择模式 MODE_MULTI：多选 MODE_SINGLE：单选
+                                    .setWidthLimit(800)  //压缩宽度限定，为原图时此设置无效，默认720
+                                    .setHeightLimit(800) //压缩高度限定，为原图时此设置无效，默认1280
+                                    .getIntent();
                             startActivityForResult(intent, 100);
                         }
                     }
@@ -284,7 +278,7 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
                             user.setSex(1);
                             tvSex.setText("女");
                         }
-                        updateInfo(user,2);
+                        updateInfo(user, 2);
                     }
                 })
                 .configItems(new ConfigItems() {
@@ -331,7 +325,7 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
                         }
                         tvNick.setText(text);
                         user.setNickName(text);
-                        updateInfo(user,1);
+                        updateInfo(user, 1);
                     }
                 })
                 .setNegative("取消", null)
@@ -367,7 +361,7 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
                         }
                         tvSign.setText(text);
                         user.setSign(text);
-                        updateInfo(user,0);
+                        updateInfo(user, 0);
                     }
                 })
                 .setNegative("取消", null)
@@ -413,7 +407,6 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
 
     /**
      * 修改用户信息
-
      */
     private void updateInfo(final User userInfo, final int type) {
         AsyncExecutor.getInstance().execute(new OnExecuteCallback() {
@@ -428,11 +421,11 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
             public void onFinish(Object result, Exception e) {
                 dismissProgress();
                 if (e != null) {
-                    if(type==0) {
+                    if (type == 0) {
                         showToast("修改个性签名失败");
-                    }else if(type==1){
+                    } else if (type == 1) {
                         showToast("修改昵称失败");
-                    }else if(type==2){
+                    } else if (type == 2) {
                         showToast("修改性别失败");
                     }
                     return;
@@ -445,20 +438,16 @@ public class MyInfoFragment extends BaseFragment implements View.OnClickListener
     }
 
 
-
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == ImagePicker.RESULT_CODE_ITEMS) {
-            if (data != null && requestCode == 100) {
-                ArrayList<ImageItem> images = (ArrayList<ImageItem>) data.getSerializableExtra(ImagePicker.EXTRA_RESULT_ITEMS);
-                if (images.size() == 1) {
-                    String path = images.get(0).path;
-                    ImageUtil.showImage(getActivity(),ivAvatar, path);
-                    uploadAvatar(path);
-                }
-            } else {
 
+        if (resultCode == Activity.RESULT_OK && requestCode == 100 && data != null) {
+            ArrayList<String> pathList = data.getStringArrayListExtra(AlbumConstant.RESULT_KEY_PATH_LIST);
+            if (pathList.size() == 1) {
+                String path = pathList.get(0);
+                ImageUtil.showImage(getActivity(), ivAvatar, path);
+                uploadAvatar(path);
             }
         }
     }

@@ -13,7 +13,7 @@
         android:layout_centerHorizontal="true"
         android:layout_marginTop="15dp"
         android:background="@drawable/bg_gray_radius"
-        android:padding="5dp"
+        android:padding="4dp"
         android:text="2018-10-10"
         android:textColor="@color/white"
         android:textSize="12sp"

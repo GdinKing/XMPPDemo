@@ -43,8 +43,8 @@
 
             <ImageView
                 android:id="@+id/iv_audio"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
                 android:layout_margin="5dp"
                 android:src="@drawable/ic_audio" />
 
@@ -58,15 +58,15 @@
 
             <ImageView
                 android:id="@+id/iv_emoji"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
                 android:layout_margin="5dp"
                 android:src="@drawable/ic_emoji" />
 
             <ImageView
                 android:id="@+id/iv_add"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
                 android:layout_margin="5dp"
                 android:src="@drawable/ic_add_round" />
 
@@ -80,6 +80,8 @@
                 android:paddingLeft="8dp"
                 android:paddingRight="8dp"
                 android:paddingTop="5dp"
+                android:gravity="center"
+                android:layout_gravity="center_vertical"
                 android:text="发送"
                 android:textColor="@color/white"
                 android:visibility="gone" />

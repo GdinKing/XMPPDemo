@@ -1,13 +1,16 @@
 package com.android.king.xmppdemo.ui;
 
+import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.support.v4.app.Fragment;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
@@ -16,6 +19,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.king.albumpicker.AlbumPicker;
+import com.android.king.albumpicker.util.AlbumConstant;
 import com.android.king.xmppdemo.R;
 import com.android.king.xmppdemo.adapter.MessageAdapter;
 import com.android.king.xmppdemo.config.AppConstants;
@@ -28,6 +33,7 @@ import com.android.king.xmppdemo.fragment.PanelFragment;
 import com.android.king.xmppdemo.listener.OnExecuteCallback;
 import com.android.king.xmppdemo.listener.OnTipDialogListener;
 import com.android.king.xmppdemo.net.AsyncExecutor;
+import com.android.king.xmppdemo.util.GlideUtil;
 import com.android.king.xmppdemo.util.Logger;
 import com.android.king.xmppdemo.util.SoftInputUtil;
 import com.android.king.xmppdemo.xmpp.XMPPHelper;
@@ -82,7 +88,7 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
 
     @Override
     protected int getLayoutId() {
-        return R.layout.fragment_message;
+        return R.layout.activity_message;
     }
 
 
@@ -183,7 +189,7 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
         AsyncExecutor.getInstance().execute(new OnExecuteCallback<Void>() {
             @Override
             public Void onExecute() throws Exception {
-                Cursor cursor = SQLiteHelper.getMsgInstance(mContext, msgDb).rawQuery("select * from " + AppConstants.TABLE_MESSAGE, null);
+                Cursor cursor = SQLiteHelper.getMsgInstance(mContext, msgDb).rawQuery("select * from " + AppConstants.TABLE_MESSAGE+" LIMIT 15", null);
                 while (cursor.moveToNext()) {
                     int category = cursor.getInt(cursor.getColumnIndex("category"));
                     int type = cursor.getInt(cursor.getColumnIndex("type"));
@@ -446,7 +452,13 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
         switch (position) {
             case 0:
                 //图片
-                Toast.makeText(this, "图片", Toast.LENGTH_SHORT).show();
+                Intent intent = AlbumPicker.getInstance(this)
+                        .setImageLoader(new GlideUtil())  //设置图片加载器
+                        .setMax(9) //最大选择数
+                        .setSelectType(AlbumConstant.TYPE_ALL)
+                        .setMode(AlbumConstant.MODE_MULTI)
+                        .getIntent();
+                startActivityForResult(intent, 100);
                 break;
             case 1:
 
@@ -455,6 +467,16 @@ public class MessageActivity extends BaseActivity implements AdapterView.OnItemL
                 break;
             case 3:
                 break;
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == Activity.RESULT_OK && requestCode == 100 && data != null) {
+            ArrayList<String> pathList = data.getStringArrayListExtra(AlbumConstant.RESULT_KEY_PATH_LIST);
+            for (String path : pathList) {
+               sendMsg(path);
+            }
         }
     }
 }
