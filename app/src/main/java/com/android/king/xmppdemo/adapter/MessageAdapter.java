@@ -20,9 +20,8 @@ import java.util.List;
 import io.github.rockerhieu.emojicon.EmojiconTextView;
 
 /***
- * 名称：
- * 描述：
- * 最近修改时间：2018年09月04日 10:14分
+ * 消息列表适配器
+ *
  * @since 2018-09-04
  * @author king
  */

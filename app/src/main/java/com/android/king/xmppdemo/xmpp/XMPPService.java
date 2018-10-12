@@ -27,7 +27,7 @@ import java.util.TimerTask;
 
 /***
  * 保持XMPP连接的服务
- * 包含发送心跳和断线重连
+ * 包含断线重连
  * @since 2018-09-04
  * @author king
  */
@@ -35,10 +35,6 @@ public class XMPPService extends Service {
 
 
     private Timer timer;
-
-    public static AbstractXMPPConnection connection = null;
-
-    private ConnectionListener connectionListener;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -57,10 +53,7 @@ public class XMPPService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Logger.i("服务启动了");
-        connection = XMPPHelper.getInstance().getConnection();
-        connectionListener = new ConnectionListener() {
-
+        ConnectionListener connectionListener = new ConnectionListener() {
             @Override
             public void connected(XMPPConnection xmppConnection) {
                 XMPPHelper.reconnectCount = 0;
@@ -96,7 +89,7 @@ public class XMPPService extends Service {
             public void reconnectionSuccessful() {
                 try {
                     Presence presence = new Presence(Presence.Type.available);//在线
-                    connection.sendStanza(presence);
+                    XMPPHelper.getInstance().getConnection().sendStanza(presence);
                 } catch (SmackException.NotConnectedException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
@@ -107,21 +100,21 @@ public class XMPPService extends Service {
             @Override
             public void reconnectingIn(int i) {
                 //i为重连倒计时
-                Logger.i("来自连接监听,reconnectingIn:" + i);
+                Logger.i("来自Service监听,reconnectingIn:" + i);
             }
 
             @Override
             public void reconnectionFailed(Exception e) {
-                Logger.i("来自连接监听,重连失败");
+                Logger.i("来自Service监听,重连失败");
                 Logger.e(e);
                 reconnect();
             }
         };
 
-        connection.addConnectionListener(connectionListener);
-        if (!connection.isConnected()) {
+        if (!XMPPHelper.getInstance().isConnected()) {
             reconnect();
         }
+        XMPPHelper.getInstance().getConnection().addConnectionListener(connectionListener);
         //心跳
         XMPPHelper.getInstance().addPing(new PingFailedListener() {
             @Override
@@ -139,9 +132,6 @@ public class XMPPService extends Service {
     private class ReconnectTask extends TimerTask {
         @Override
         public void run() {
-            if (connection == null) {
-                return;
-            }
             if (!XMPPHelper.getInstance().isConnected()) {
                 reconnect();
                 return;
@@ -153,7 +143,6 @@ public class XMPPService extends Service {
 
     @Override
     public void onDestroy() {
-        Logger.i("XMPPService结束了");
         if (timer != null) {
             timer.cancel();
             timer = null;

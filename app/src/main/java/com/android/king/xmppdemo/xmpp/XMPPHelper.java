@@ -275,7 +275,7 @@ public class XMPPHelper {
      * @param password 密码
      * @param attr     一些用户资料
      */
-    public void registe(String account, String password, Map<String, String> attr) throws InterruptedException, XMPPException, SmackException, IOException {
+    public void regist(String account, String password, Map<String, String> attr) throws InterruptedException, XMPPException, SmackException, IOException {
         if (xmppConnection == null) {
             openConnection();
         }
@@ -350,7 +350,7 @@ public class XMPPHelper {
 
 
     /**
-     * 直接添加好友到好友列表，不管用户拒绝与否
+     * 直接添加好友到好友列表，但彼此处于非订阅状态
      *
      * @param account   用户账号
      * @param note      用户备注名

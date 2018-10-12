@@ -73,7 +73,7 @@ public class RegistActivity extends BaseActivity {
         AsyncExecutor.getInstance().execute(new OnExecuteCallback<Void>() {
             @Override
             public Void onExecute() throws Exception {
-                XMPPHelper.getInstance().registe(account, password, null);
+                XMPPHelper.getInstance().regist(account, password, null);
                 return null;
             }
 
